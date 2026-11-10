@@ -1,0 +1,133 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">LAS PERSONAS Y LOS DETALLES DE TU ESTUDIO</p>
+    <h1>Servicios y manicuristas</h1>
+    <p>Configura lo que ofreces y quién realizará cada servicio.</p>
+  </div>
+  <app-icon name="sparkle" />
+</header>
+<div class="catalog-layout">
+  <section class="panel catalog-panel">
+    <div class="panel-heading">
+      <h2>Manicuristas</h2>
+      <span>{{ store.state().manicurists.length }} registradas</span>
+    </div>
+    <div class="catalog-list">
+      @for (m of store.state().manicurists; track m.id) {
+        <div class="catalog-row">
+          <div>
+            <strong>{{ m.name }}</strong
+            ><small>{{ m.active ? 'Disponible para nuevas citas' : 'Inactiva' }}</small>
+          </div>
+          <button (click)="editProfessional(m)" [attr.aria-label]="'Editar manicurista ' + m.name">
+            Editar
+          </button>
+        </div>
+      } @empty {
+        <p class="helper">Registra a la primera profesional de tu estudio.</p>
+      }
+    </div>
+    <form (ngSubmit)="saveProfessional()">
+      <h3>{{ professional.id ? 'Editar manicurista' : 'Nueva manicurista' }}</h3>
+      <label class="field"
+        >Nombre de la manicurista<input
+          name="professionalName"
+          [(ngModel)]="professional.name"
+          required
+          maxlength="60"
+          placeholder="Nombre o código de demostración" /></label
+      ><label class="checkbox-field"
+        ><input type="checkbox" name="professionalActive" [(ngModel)]="professional.active" />
+        Disponible para nuevas citas</label
+      >
+      <div class="catalog-actions">
+        @if (professional.id) {
+          <button type="button" (click)="resetProfessional()">Cancelar edición</button>
+        }
+        <button class="primary" type="submit" [disabled]="store.busy() || !store.ready()">
+          Guardar manicurista
+        </button>
+      </div>
+    </form>
+  </section>
+  <section class="panel catalog-panel">
+    <div class="panel-heading">
+      <h2>Servicios</h2>
+      <span>{{ store.state().services.length }} registrados</span>
+    </div>
+    <div class="catalog-list">
+      @for (s of store.state().services; track s.id) {
+        <div class="catalog-row">
+          <div>
+            <strong>{{ s.name }}</strong
+            ><small
+              >{{ s.basePrice | currency: 'MXN' }} · {{ s.duration }} min + {{ s.buffer }} min ·
+              {{ s.active ? 'Activo' : 'Inactivo' }}</small
+            >
+          </div>
+          <button (click)="editService(s)" [attr.aria-label]="'Editar servicio ' + s.name">
+            Editar
+          </button>
+        </div>
+      } @empty {
+        <p class="helper">Crea tu catálogo de servicios para comenzar.</p>
+      }
+    </div>
+    <form (ngSubmit)="saveService()">
+      <h3>{{ service.id ? 'Editar servicio' : 'Nuevo servicio' }}</h3>
+      <div class="form-grid">
+        <label class="field full-width"
+          >Nombre del servicio<input
+            name="serviceName"
+            [(ngModel)]="service.name"
+            required
+            maxlength="80"
+            placeholder="Ej. Semipermanente" /></label
+        ><label class="field full-width"
+          >Precio base · MXN<input
+            class="money-input"
+            type="number"
+            inputmode="decimal"
+            name="basePrice"
+            [(ngModel)]="service.basePrice"
+            min="0"
+            max="100000"
+            step="0.01"
+            required /></label
+        ><label class="field"
+          >Duración · minutos<input
+            type="number"
+            name="duration"
+            [(ngModel)]="service.duration"
+            min="15"
+            max="480"
+            required /></label
+        ><label class="field"
+          >Preparación · minutos<input
+            type="number"
+            name="buffer"
+            [(ngModel)]="service.buffer"
+            min="0"
+            max="120"
+            required
+        /></label>
+      </div>
+      <label class="checkbox-field"
+        ><input type="checkbox" name="serviceActive" [(ngModel)]="service.active" /> Disponible para
+        nuevas citas</label
+      >
+      <div class="catalog-actions">
+        @if (service.id) {
+          <button type="button" (click)="resetService()">Cancelar edición</button>
+        }
+        <button class="primary" type="submit" [disabled]="store.busy() || !store.ready()">
+          Guardar servicio
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+<p class="helper">
+  Desactivar conserva el historial y evita nuevas asignaciones. No elimina citas ni diseños
+  anteriores.
+</p>

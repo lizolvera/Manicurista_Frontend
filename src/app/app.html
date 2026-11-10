@@ -1,0 +1,75 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/agenda" aria-label="Entre Uñas, ir a la agenda"
+      ><span class="brand-symbol">e<span>u</span><i>✧</i></span>
+      <div>Entre Uñas<small>BEAUTY STUDIO · AGENDA</small></div></a
+    >
+    <p class="navigation-label">TU ESPACIO DE BELLEZA</p>
+    <nav aria-label="Navegación principal">
+      @for (link of links; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="active"
+          #active="routerLinkActive"
+          [attr.aria-current]="active.isActive ? 'page' : null"
+          (click)="store.clearFeedback()"
+          ><app-icon [name]="link.icon" /><span>{{ link.label }}</span>
+          @if (link.path === '/notificaciones' && store.unread()) {
+            <b>{{ store.unread() }}</b>
+          }
+        </a>
+      }
+    </nav>
+    <div class="studio-note">
+      <app-icon name="sparkle" />
+      <p>El cuidado empieza<br />por un día en armonía.</p>
+      <span>Un espacio para crear belleza.</span>
+    </div>
+    <div class="studio-profile">
+      <span class="studio-avatar">B3</span>
+      <div>Mi estudio<small>Bina 03 · Demostración</small></div>
+    </div>
+  </aside>
+  <div class="main-area">
+    <header class="topbar">
+      <span>MI ESTUDIO <i>/</i> ENTRE UÑAS</span>
+      <div class="connection">
+        <span class="connection-dot"></span
+        >{{ store.remote ? 'Agenda conectada' : 'Agenda en este navegador' }}
+      </div>
+      <a routerLink="/notificaciones" class="notification-link" aria-label="Abrir notificaciones"
+        ><app-icon name="bell" />
+        @if (store.unread()) {
+          <i></i>
+        }
+      </a>
+    </header>
+    <main id="contenido">
+      <div class="feedback" aria-live="polite">
+        @if (store.error()) {
+          <div class="alert error" role="alert">
+            {{ store.error()
+            }}<button type="button" (click)="store.load()" [disabled]="store.busy()">
+              Actualizar agenda</button
+            ><button type="button" aria-label="Cerrar aviso" (click)="store.error.set('')">
+              ×
+            </button>
+          </div>
+        }
+        @if (store.message()) {
+          <div class="alert success" role="status">
+            {{ store.message()
+            }}<button type="button" aria-label="Cerrar aviso" (click)="store.message.set('')">
+              ×
+            </button>
+          </div>
+        }
+      </div>
+      <router-outlet />
+    </main>
+    <footer>
+      <span>ENTRE UÑAS <i>—</i> Hecho para cuidar cada detalle.</span
+      ><small>PMV v0.2 · Solo datos ficticios</small>
+    </footer>
+  </div>
+</div>

@@ -1,0 +1,262 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">CADA CITA, UN MOMENTO ESPECIAL</p>
+    <h1>Tu agenda de belleza</h1>
+    <p>Un día organizado. Más tiempo para hacer lo que amas.</p>
+  </div>
+  <a class="button primary" routerLink="/citas/nueva"><app-icon name="plus" /> Nueva cita</a>
+</header>
+
+<section class="calendar-overview" aria-label="Calendario y resumen del día">
+  <div class="panel calendar-panel">
+    <div class="panel-heading">
+      <div>
+        <p class="section-kicker">TU CALENDARIO</p>
+        <h2>{{ month() | date: 'MMMM yyyy' }}</h2>
+      </div>
+      <div class="calendar-nav">
+        <button aria-label="Mes anterior" (click)="shiftMonth(-1)">‹</button
+        ><button aria-label="Mes siguiente" (click)="shiftMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="weekdays">
+      @for (d of ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']; track $index) {
+        <span>{{ d }}</span>
+      }
+    </div>
+    <div class="calendar-grid">
+      @for (d of days(); track d.date) {
+        <button
+          [class.other-month]="!d.current"
+          [class.selected]="d.date === store.selectedDate()"
+          [class.is-today]="d.today"
+          [attr.aria-label]="d.date + ', ' + d.count + ' citas activas'"
+          [attr.aria-pressed]="d.date === store.selectedDate()"
+          (click)="store.selectedDate.set(d.date)"
+        >
+          {{ d.day }}<i [class.has-citas]="d.count > 0"></i>
+        </button>
+      }
+    </div>
+    <div class="calendar-foot">
+      <span><i></i> Días con citas</span
+      ><button class="subtle" (click)="today()">Volver a hoy <span>↗</span></button>
+    </div>
+  </div>
+  <aside class="day-overview">
+    <div class="day-caption">
+      <p class="eyebrow">UN VISTAZO A TU DÍA</p>
+      <h2>{{ store.selectedDate() + 'T12:00:00' | date: 'd MMMM' }}</h2>
+      <p>Cada detalle, en su lugar.</p>
+    </div>
+    <button
+      type="button"
+      class="state-card confirmed-card"
+      [class.is-active]="status() === 'Confirmada'"
+      [attr.aria-pressed]="status() === 'Confirmada'"
+      [attr.aria-label]="'Ver citas confirmadas del día seleccionado: ' + counts().confirmed"
+      aria-controls="appointment-results"
+      (click)="showStatus('Confirmada')"
+    >
+      <span class="state-icon"><app-icon name="check" /></span>
+      <span class="state-content"
+        ><span>Citas confirmadas</span><small>Ver clientas confirmadas ↗</small></span
+      >
+      <strong>{{ counts().confirmed | number: '2.0-0' }}</strong>
+    </button>
+    <button
+      type="button"
+      class="state-card pending-card"
+      [class.is-active]="status() === 'Pendiente'"
+      [attr.aria-pressed]="status() === 'Pendiente'"
+      [attr.aria-label]="'Ver citas pendientes del día seleccionado: ' + counts().pending"
+      aria-controls="appointment-results"
+      (click)="showStatus('Pendiente')"
+    >
+      <span class="state-icon"><app-icon name="clock" /></span>
+      <span class="state-content"
+        ><span>Pendientes de confirmar</span><small>Ver clientas pendientes ↗</small></span
+      >
+      <strong>{{ counts().pending | number: '2.0-0' }}</strong>
+    </button>
+    <button
+      type="button"
+      class="state-card cancelled-card"
+      [class.is-active]="status() === 'Cancelada'"
+      [attr.aria-pressed]="status() === 'Cancelada'"
+      [attr.aria-label]="'Ver citas canceladas del día seleccionado: ' + counts().cancelled"
+      aria-controls="appointment-results"
+      (click)="showStatus('Cancelada')"
+    >
+      <span class="state-icon"><app-icon name="close" /></span>
+      <span class="state-content"
+        ><span>Citas canceladas</span><small>Ver clientas con citas canceladas ↗</small></span
+      >
+      <strong>{{ counts().cancelled | number: '2.0-0' }}</strong>
+    </button>
+    <p class="day-note">
+      <app-icon name="sparkle" /> Una pausa entre citas también es parte del cuidado.
+    </p>
+  </aside>
+</section>
+
+<section class="appointments-section" id="appointment-results" aria-labelledby="results-heading">
+  <div class="panel-heading">
+    <div>
+      <p class="section-kicker">LOS ENCUENTROS DE HOY</p>
+      <h2 id="results-heading" #resultsHeading tabindex="-1">
+        {{ store.selectedDate() + 'T12:00:00' | date: 'EEEE d MMMM' }}
+      </h2>
+    </div>
+    <button class="subtle" (click)="exportList()">
+      <app-icon name="download" /> Generar lista de citas
+    </button>
+  </div>
+  <div class="toolbar appointment-filters">
+    <div class="search-field">
+      <app-icon name="search" /><input
+        aria-label="Buscar citas"
+        placeholder="Buscar clienta, servicio o manicurista…"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+    </div>
+    <div class="filter-tabs" aria-label="Estado de las citas">
+      @for (s of ['Todas', 'Confirmada', 'Pendiente', 'Cancelada']; track s) {
+        <button
+          [class.selected]="status() === s"
+          [attr.aria-pressed]="status() === s"
+          (click)="status.set(s)"
+        >
+          {{ s }}
+        </button>
+      }
+    </div>
+  </div>
+  <p class="results-summary" role="status">
+    <strong>{{ statusLabel() }}</strong> · {{ appointments().length }}
+    {{ appointments().length === 1 ? 'cita encontrada' : 'citas encontradas' }}
+    @if (status() !== 'Todas') {
+      <button type="button" class="subtle" (click)="status.set('Todas'); search.set('')">
+        Ver todas las citas
+      </button>
+    }
+  </p>
+  <div class="appointment-grid">
+    @for (a of appointments(); track a.id) {
+      <article
+        class="panel appointment-card"
+        [class.cancelled-appointment]="a.status === 'Cancelada'"
+      >
+        <div class="card-top">
+          <span class="time-label"
+            ><app-icon name="clock" /> {{ a.time }} <span>— {{ end(a) }}</span></span
+          ><span
+            class="status"
+            [class.confirmed]="a.status === 'Confirmada'"
+            [class.cancelled]="a.status === 'Cancelada'"
+            >{{ a.status }}</span
+          >
+        </div>
+        <div class="client-line">
+          <span class="avatar">{{ a.client.slice(0, 1) }}</span>
+          <div>
+            <a [routerLink]="['/clientas', a.clientId]">{{ a.client }}</a>
+            <p>{{ a.service }}</p>
+          </div>
+        </div>
+        <div class="appointment-details">
+          <div>
+            <span>TE ATIENDE</span><strong>{{ a.manicurist || 'Por asignar' }}</strong>
+          </div>
+          <div>
+            <span>TIEMPO RESERVADO</span
+            ><strong>{{ a.duration }} min + {{ a.buffer }} de preparación</strong>
+          </div>
+        </div>
+        @if (a.attendance !== 'Sin registrar') {
+          <p class="attendance-record">Asistencia: {{ a.attendance }}</p>
+        }
+        <p class="appointment-note">
+          Precio: {{ a.totalPrice == null ? 'Por definir' : (a.totalPrice | currency: 'MXN') }} ·
+          Recibido: {{ a.deposit + a.balancePaid | currency: 'MXN' }}
+          @if (a.totalPrice != null) {
+            · Saldo: {{ a.totalPrice - a.deposit - a.balancePaid | currency: 'MXN' }}
+          }
+        </p>
+        @if (a.notes) {
+          <p class="appointment-note">{{ a.notes }}</p>
+        }
+        <div class="card-actions">
+          @if (a.status !== 'Cancelada') {
+            <a [routerLink]="['/citas', a.id, 'editar']">Editar cita <span>↗</span></a>
+            @if (a.status === 'Pendiente') {
+              <button
+                class="confirm-button"
+                (click)="change(a, 'Confirmada')"
+                [disabled]="store.busy() || !a.manicurist"
+              >
+                Confirmar
+              </button>
+            }
+            <button
+              class="more-button"
+              [attr.aria-label]="'Más acciones para ' + a.client"
+              [attr.aria-expanded]="menuId() === a.id"
+              (click)="menuId.set(menuId() === a.id ? '' : a.id)"
+            >
+              •••
+            </button>
+          } @else {
+            <small>Horario liberado</small>
+          }
+        </div>
+        @if (menuId() === a.id) {
+          <div class="expanded-actions">
+            <button (click)="remind(a)" [disabled]="store.busy()">Crear recordatorio interno</button
+            ><button (click)="store.copyReminder(a)">Copiar mensaje</button>
+            @if (a.status === 'Confirmada') {
+              <button (click)="attendance(a, 'Asistió')" [disabled]="store.busy()">
+                Registrar que asistió</button
+              ><button (click)="attendance(a, 'No asistió')" [disabled]="store.busy()">
+                Registrar inasistencia
+              </button>
+              @if (a.attendance !== 'Sin registrar') {
+                <button (click)="attendance(a, 'Sin registrar')" [disabled]="store.busy()">
+                  Corregir asistencia
+                </button>
+              }
+            }
+            <button class="danger" (click)="cancelId.set(a.id); menuId.set('')">
+              Cancelar cita
+            </button>
+          </div>
+        }
+        @if (cancelId() === a.id) {
+          <div class="cancel-confirm">
+            <p>¿Cancelar esta cita y liberar el horario?</p>
+            <button class="danger" (click)="change(a, 'Cancelada')" [disabled]="store.busy()">
+              Sí, cancelar</button
+            ><button (click)="cancelId.set('')">Conservar cita</button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <div class="panel empty">
+        <app-icon name="calendar" />
+        <h3>
+          {{ status() === 'Todas' ? 'Un espacio para algo bonito' : 'Sin citas en esta categoría' }}
+        </h3>
+        <p>
+          No hay {{ statusLabel().toLowerCase() }} para el día seleccionado{{
+            search() ? ' y esta búsqueda' : ''
+          }}.
+        </p>
+        <a class="button" routerLink="/citas/nueva"><app-icon name="plus" /> Agendar una cita</a>
+      </div>
+    }
+  </div>
+  <p class="agenda-footnote">
+    La hora final incluye la preparación posterior. Atención de 07:00 a 21:00.
+  </p>
+</section>

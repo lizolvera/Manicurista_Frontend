@@ -1,0 +1,91 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">LOS PEQUEÑOS DETALLES IMPORTAN</p>
+    <h1>Notificaciones</h1>
+    <p>Todo lo que cambia en tu agenda, en un solo lugar.</p>
+  </div>
+  <button (click)="read()" [disabled]="store.busy() || !store.unread()">
+    <app-icon name="check" /> Marcar todas como leídas
+  </button>
+</header>
+<div class="notification-summary">
+  <span class="notification-orbit"><app-icon name="bell" /></span>
+  <div>
+    <h2>{{ store.unread() ? store.unread() + ' avisos por revisar' : 'Todo está al día' }}</h2>
+    <p>Un momento para revisar tu agenda y seguir creando.</p>
+  </div>
+  <span class="summary-flower">✧</span>
+</div>
+<section class="panel notification-panel">
+  <div class="notification-toolbar">
+    <div class="filter-tabs">
+      @for (f of ['Todas', 'Sin leer']; track f) {
+        <button
+          [class.selected]="filter() === f"
+          [attr.aria-pressed]="filter() === f"
+          (click)="filter.set(f)"
+        >
+          {{ f }}
+        </button>
+      }
+    </div>
+    <span>ACTIVIDAD DE TU ESTUDIO</span>
+  </div>
+  @for (n of notices(); track n.id) {
+    <article class="notice" [class.unread]="!n.read">
+      <div
+        class="notice-icon"
+        [class.cancel-icon]="n.kind === 'cancel'"
+        [class.reminder-icon]="n.kind === 'reminder'"
+      >
+        <app-icon
+          [name]="n.kind === 'cancel' ? 'close' : n.kind === 'reminder' ? 'bell' : 'check'"
+        />
+      </div>
+      <div class="notice-content">
+        <div class="notice-title">
+          <h3>
+            {{
+              n.kind === 'cancel'
+                ? 'Cita cancelada'
+                : n.kind === 'reminder'
+                  ? 'Recordatorio preparado'
+                  : 'Actualización de tu agenda'
+            }}
+          </h3>
+          @if (!n.read) {
+            <span class="unread-label">SIN LEER</span>
+          }
+        </div>
+        <p>{{ n.message }}</p>
+        <time>{{ n.createdAt | date: 'd MMM yyyy · HH:mm' }}</time>
+        @if (expanded() === n.id) {
+          <div class="notice-actions">
+            <button (click)="open(n.appointmentId)">Ver cita <app-icon name="arrow" /></button>
+            @if (!n.read) {
+              <button (click)="read(n.id)" [disabled]="store.busy()">Marcar como leída</button>
+            }
+          </div>
+        }
+      </div>
+      <button
+        class="more"
+        [attr.aria-label]="'Opciones del aviso: ' + n.message"
+        [attr.aria-expanded]="expanded() === n.id"
+        (click)="expanded.set(expanded() === n.id ? '' : n.id)"
+      >
+        ☰
+      </button>
+    </article>
+  } @empty {
+    <div class="empty">
+      <app-icon name="bell" />
+      <h3>Un momento de calma</h3>
+      <p>No hay notificaciones en esta vista. Los cambios de tus citas aparecerán aquí.</p>
+    </div>
+  }
+</section>
+<p class="notification-footnote">
+  Avisos internos del estudio. Los recordatorios para clientas se revisan y envían manualmente; no
+  hay envío automático.
+</p>

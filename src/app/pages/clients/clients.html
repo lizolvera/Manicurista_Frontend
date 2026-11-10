@@ -1,0 +1,80 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">CONEXIONES QUE SE CUIDAN</p>
+    <h1>Tus clientas</h1>
+    <p>Un espacio para conocerlas, recordarlas y cuidar cada visita.</p>
+  </div>
+  <button class="primary" (click)="adding.set(!adding())" [attr.aria-expanded]="adding()">
+    <app-icon name="plus" /> Nueva clienta
+  </button>
+</header>
+@if (adding()) {
+  <form class="panel new-client-form" (ngSubmit)="save()">
+    <h2>Una nueva conexión</h2>
+    <div class="form-grid">
+      <label class="field"
+        >Nombre o código ficticio<input
+          name="name"
+          [(ngModel)]="name"
+          required
+          maxlength="60"
+          placeholder="Ej. C01" /></label
+      ><label class="field"
+        >Descripción breve<input
+          name="description"
+          [(ngModel)]="description"
+          maxlength="500"
+          placeholder="Preferencias generales del servicio"
+      /></label>
+    </div>
+    <div class="new-client-actions">
+      <button type="button" (click)="adding.set(false)">Volver</button
+      ><button class="primary" type="submit" [disabled]="store.busy() || !store.ready()">
+        Guardar clienta
+      </button>
+    </div>
+  </form>
+}
+<section class="panel clients-panel">
+  <div class="clients-toolbar">
+    <div class="search-field">
+      <app-icon name="search" /><input
+        aria-label="Buscar clientas"
+        placeholder="Buscar por nombre o código de clienta…"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+    </div>
+    <span>{{ clients().length }} clientas</span>
+  </div>
+  @for (c of clients(); track c.id) {
+    <a class="client-row" [routerLink]="['/clientas', c.id]"
+      ><span class="avatar">{{ c.name.slice(0, 1) }}</span>
+      <div class="client-name">
+        <h2>{{ c.name }}</h2>
+        <p>{{ c.description || 'Cada visita cuenta una historia.' }}</p>
+      </div>
+      <span class="client-visits">{{ count(c.id) }} citas registradas</span
+      ><span class="profile-link">Ver perfil <app-icon name="arrow" /></span
+    ></a>
+  } @empty {
+    <div class="empty">
+      <app-icon name="clients" />
+      <h3>{{ query() ? 'No encontramos coincidencias' : 'Aquí empieza una nueva conexión' }}</h3>
+      <p>
+        {{
+          query()
+            ? 'Prueba con otro nombre o código.'
+            : 'Registra a tu primera clienta. También aparecerá aquí cuando guardes su primera cita.'
+        }}
+      </p>
+      @if (!query()) {
+        <button (click)="adding.set(true)"><app-icon name="plus" /> Registrar clienta</button>
+      }
+    </div>
+  }
+</section>
+<p class="clients-note">
+  Tu directorio y tus citas permanecen conectados. Utiliza nombres o códigos ficticios en esta
+  demostración.
+</p>

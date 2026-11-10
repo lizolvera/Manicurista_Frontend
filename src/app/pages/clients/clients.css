@@ -1,0 +1,136 @@
+.clients-panel {
+  overflow: hidden;
+}
+.clients-toolbar {
+  padding: 30px 34px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  border-bottom: 1px solid var(--border);
+}
+.clients-toolbar .search-field {
+  flex: 1;
+  max-width: 620px;
+}
+.clients-toolbar > span {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.client-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 28px 34px;
+  text-decoration: none;
+  color: var(--ink);
+  border-bottom: 1px solid #ede3d9;
+  transition: background 0.2s;
+}
+.client-row:last-child {
+  border-bottom: 0;
+}
+.client-row:hover {
+  background: #fbf1e9;
+}
+.client-name {
+  flex: 1;
+  min-width: 0;
+}
+.client-name h2 {
+  font:
+    23px Georgia,
+    serif;
+  margin-bottom: 9px;
+  overflow-wrap: anywhere;
+}
+.client-name p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.client-visits {
+  font-size: 10px;
+  color: #aa9179;
+  white-space: nowrap;
+}
+.profile-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--rose);
+  margin-left: 26px;
+  white-space: nowrap;
+}
+.profile-link app-icon {
+  width: 17px;
+  height: 17px;
+}
+.clients-note {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.9;
+  margin-top: 24px;
+}
+.new-client-form {
+  padding: 28px 34px;
+  margin-bottom: 26px;
+}
+.new-client-form h2 {
+  font:
+    25px Georgia,
+    serif;
+  margin-bottom: 25px;
+}
+.new-client-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+@media (max-width: 900px) {
+  .client-visits {
+    display: none;
+  }
+  .profile-link {
+    margin-left: 0;
+  }
+  .client-row {
+    padding: 25px;
+    gap: 17px;
+  }
+  .clients-toolbar {
+    padding: 25px;
+  }
+}
+@media (max-width: 500px) {
+  .clients-toolbar {
+    padding: 20px;
+    display: block;
+  }
+  .clients-toolbar > span {
+    display: block;
+    margin: 14px 0 0;
+  }
+  .client-row {
+    padding: 22px 18px;
+    gap: 14px;
+  }
+  .client-name h2 {
+    font-size: 21px;
+  }
+  .profile-link {
+    font-size: 0;
+  }
+  .profile-link app-icon {
+    font-size: 12px;
+  }
+  .new-client-form {
+    padding: 25px 20px;
+  }
+}

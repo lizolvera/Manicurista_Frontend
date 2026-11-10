@@ -1,0 +1,207 @@
+<a class="back-link" routerLink="/agenda"><span>←</span> Volver a la agenda</a>
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">UN NUEVO ESPACIO EN TU DÍA</p>
+    <h1>{{ editId ? 'Los detalles de tu cita' : 'Agendar una cita' }}</h1>
+    <p>Elige el servicio, la profesional y el momento ideal.</p>
+  </div>
+  <span class="form-ornament">✧</span>
+</header>
+@if (missing()) {
+  <div class="panel empty">
+    <h3>No encontramos esta cita</h3>
+    <p>Vuelve a la agenda para seleccionar una cita disponible.</p>
+    <a routerLink="/agenda" class="button">Ver agenda</a>
+  </div>
+} @else {
+  @if (store.ready() && (!services().length || !manicurists().length)) {
+    <div class="alert error">
+      Necesitas un servicio y una manicurista activos para agendar.
+      <a routerLink="/catalogos">Configurar catálogos</a>
+    </div>
+  }
+  <div class="form-layout">
+    <form class="panel appointment-form" (ngSubmit)="save()">
+      <section>
+        <h2 class="form-section-title">01 &nbsp; CLIENTA Y SERVICIO</h2>
+        <div class="form-grid">
+          <label class="field"
+            >Nombre o código de la clienta
+            <input
+              name="client"
+              [(ngModel)]="form.client"
+              (ngModelChange)="clientChanged()"
+              list="client-list"
+              required
+              maxlength="60"
+              placeholder="Ej. C01"
+            /><datalist id="client-list">
+              @for (c of store.state().clients; track c.id) {
+                <option [value]="c.name"></option>
+              }</datalist
+            ><small>Elige una clienta o escribe un nuevo nombre ficticio.</small></label
+          >
+          <label class="field"
+            >Servicio a realizar<select
+              name="service"
+              [ngModel]="form.serviceId"
+              (ngModelChange)="selectService($event)"
+              required
+            >
+              <option value="" disabled>Selecciona un servicio</option>
+              @for (s of services(); track s.id) {
+                <option [value]="s.id">{{ s.name }}{{ s.active ? '' : ' (inactivo)' }}</option>
+              }</select
+            ><small>Selecciona el servicio de esta cita.</small></label
+          >
+          <label class="field full-width"
+            >Manicurista que atenderá a la clienta<select
+              name="manicurist"
+              [ngModel]="form.manicuristId"
+              (ngModelChange)="selectManicurist($event)"
+              required
+            >
+              <option value="" disabled>Selecciona una manicurista</option>
+              @for (m of manicurists(); track m.id) {
+                <option [value]="m.id">{{ m.name }}{{ m.active ? '' : ' (inactiva)' }}</option>
+              }</select
+            ><small>La disponibilidad se comprueba para esta profesional.</small></label
+          >
+        </div>
+      </section>
+      <section>
+        <h2 class="form-section-title">02 &nbsp; FECHA Y TIEMPO</h2>
+        <div class="form-grid">
+          <label class="field"
+            >Fecha de la cita<input
+              type="date"
+              name="date"
+              [(ngModel)]="form.date"
+              required /></label
+          ><label class="field"
+            >Hora de inicio<input type="time" name="time" [(ngModel)]="form.time" required /></label
+          ><label class="field"
+            >Duración del servicio · minutos<input
+              type="number"
+              name="duration"
+              [(ngModel)]="form.duration"
+              min="15"
+              max="480"
+              required /></label
+          ><label class="field"
+            >Preparación posterior · minutos<input
+              type="number"
+              name="buffer"
+              [(ngModel)]="form.buffer"
+              min="0"
+              max="120"
+              required
+            /><small>Reserva tiempo para preparar el siguiente servicio.</small></label
+          >
+        </div>
+      </section>
+      <section>
+        <h2 class="form-section-title">03 &nbsp; PRECIO Y DETALLES ADICIONALES</h2>
+        <div class="form-grid">
+          <label class="field full-width"
+            >Precio total acordado · MXN<input
+              class="money-input"
+              inputmode="decimal"
+              type="number"
+              name="totalPrice"
+              [(ngModel)]="form.totalPrice"
+              min="0"
+              max="100000"
+              step="0.01"
+              required
+            /><small
+              >Se carga del servicio y puedes ajustarlo para esta cita. No cambia el precio del
+              catálogo.</small
+            ></label
+          ><label class="field"
+            >Anticipo recibido · MXN<input
+              type="number"
+              class="money-input"
+              inputmode="decimal"
+              name="deposit"
+              [(ngModel)]="form.deposit"
+              min="0"
+              max="100000"
+              step="0.01"
+              required
+            /><small
+              >Escribe el importe en pesos, por ejemplo 100 o 100.50. No procesa pagos.</small
+            ></label
+          ><label class="field"
+            >Pago adicional recibido · MXN<input
+              type="number"
+              class="money-input"
+              inputmode="decimal"
+              name="balancePaid"
+              [(ngModel)]="form.balancePaid"
+              min="0"
+              max="100000"
+              step="0.01"
+              required
+            /><small
+              >Escribe el importe sin repetir el anticipo, por ejemplo 120 o 120.50.</small
+            ></label
+          >
+          @if (form.status === 'Confirmada') {
+            <label class="field full-width"
+              >Asistencia registrada<select name="attendance" [(ngModel)]="form.attendance">
+                <option>Sin registrar</option>
+                <option>Asistió</option>
+                <option>No asistió</option>
+              </select></label
+            >
+          }
+          <label class="field full-width"
+            >Notas de la cita<textarea
+              name="notes"
+              [(ngModel)]="form.notes"
+              rows="3"
+              maxlength="500"
+              placeholder="Preferencias del servicio o detalles que quieras recordar…"
+            ></textarea
+            ><small>Usa información ficticia y evita datos sensibles.</small></label
+          >
+        </div>
+      </section>
+      @if (store.error()) {
+        <p class="inline-error" role="alert">{{ store.error() }}</p>
+      }
+      <p class="payment-summary">
+        Recibido: {{ received().toFixed(2) }} MXN · Saldo pendiente:
+        {{ remaining().toFixed(2) }} MXN
+      </p>
+      <div class="form-actions">
+        <a class="button" routerLink="/agenda">Volver</a
+        ><button type="submit" class="primary" [disabled]="store.busy() || !store.ready()">
+          <app-icon name="check" /> {{ store.busy() ? 'Guardando…' : 'Guardar cita' }}
+        </button>
+      </div>
+    </form>
+    <aside class="appointment-preview">
+      <span class="preview-symbol">✧</span>
+      <p class="eyebrow">CUIDAMOS CADA DETALLE</p>
+      <h2>Una cita.<br />Todo en su lugar.</h2>
+      <div class="preview-line">
+        <span>CLIENTA</span><strong>{{ form.client || 'Tu próxima clienta' }}</strong>
+      </div>
+      <div class="preview-line">
+        <span>SERVICIO</span><strong>{{ form.service }}</strong>
+      </div>
+      <div class="preview-line">
+        <span>TE ATIENDE</span><strong>{{ form.manicurist || 'Por seleccionar' }}</strong>
+      </div>
+      <div class="preview-line">
+        <span>HORARIO RESERVADO</span><strong>{{ form.time }} — {{ end(form) }}</strong
+        ><small>Incluye {{ form.buffer || 0 }} minutos de preparación.</small>
+      </div>
+      <p class="preview-note">
+        <app-icon name="calendar" /> Primero guarda la cita. Después confírmala desde tu agenda.
+      </p>
+    </aside>
+  </div>
+}

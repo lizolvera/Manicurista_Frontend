@@ -1,0 +1,97 @@
+<a class="back-link" routerLink="/disenos"><span>←</span> Volver a diseños</a>
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">GUARDA UN POCO DE INSPIRACIÓN</p>
+    <h1>Registrar diseño</h1>
+    <p>Una fotografía, una nota y el recuerdo de un servicio especial.</p>
+  </div>
+</header>
+<form class="panel design-form" (ngSubmit)="save()">
+  <div class="photo-column">
+    <div class="photo-preview">
+      @if (image()) {
+        <img [src]="image()" alt="Vista previa del diseño seleccionado" />
+      } @else {
+        <app-icon name="image" /><span>Aquí empieza un nuevo diseño</span
+        ><small>Tu creatividad, en una fotografía.</small>
+      }
+    </div>
+    <label class="upload-label" for="design-image"
+      ><app-icon name="plus" />
+      {{ image() ? 'Cambiar fotografía' : 'Seleccionar fotografía' }}</label
+    ><input
+      id="design-image"
+      class="file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      (change)="choose($event)"
+      [disabled]="loading() || store.busy()"
+    />
+    <p class="photo-help">
+      JPG, PNG o WebP · Máximo 250 KB<br />Utiliza una imagen de demostración sin datos personales.
+    </p>
+    @if (fileError()) {
+      <p class="file-error" role="alert">{{ fileError() }}</p>
+    }
+  </div>
+  <div class="design-fields">
+    <h2 class="form-section-title">LOS DETALLES DEL DISEÑO</h2>
+    <label class="field"
+      >Clienta<select
+        name="clientId"
+        [(ngModel)]="clientId"
+        (ngModelChange)="appointmentId = ''"
+        required
+      >
+        <option value="" disabled>Selecciona una clienta</option>
+        @for (c of store.state().clients; track c.id) {
+          <option [value]="c.id">{{ c.name }}</option>
+        }
+      </select></label
+    >
+    @if (!store.state().clients.length) {
+      <p class="helper">
+        Primero <a routerLink="/clientas">registra una clienta</a> para asociar su diseño.
+      </p>
+    }
+    <label class="field"
+      >Servicio realizado<select
+        name="service"
+        [(ngModel)]="serviceId"
+        (ngModelChange)="appointmentId = ''"
+        required
+      >
+        <option value="" disabled>Selecciona un servicio</option>
+        @for (s of services(); track s.id) {
+          <option [value]="s.id">{{ s.name }}</option>
+        }
+      </select></label
+    ><label class="field"
+      >Cita relacionada · opcional<select name="appointmentId" [(ngModel)]="appointmentId">
+        <option value="">Sin asociar a una cita</option>
+        @for (a of appointments(); track a.id) {
+          <option [value]="a.id">{{ a.date }} · {{ a.time }} · {{ a.client }}</option>
+        }
+      </select></label
+    ><label class="field"
+      >Nota del diseño<textarea
+        name="note"
+        [(ngModel)]="note"
+        rows="5"
+        maxlength="500"
+        placeholder="Colores, acabado, técnica o un detalle que quieras recordar…"
+      ></textarea
+      ><small>Hasta 500 caracteres.</small></label
+    >
+    <div class="design-actions">
+      <a class="button" routerLink="/disenos">Volver</a
+      ><button
+        type="submit"
+        class="primary"
+        [disabled]="loading() || store.busy() || !store.ready()"
+      >
+        <app-icon name="check" /> {{ store.busy() ? 'Guardando…' : 'Guardar diseño' }}
+      </button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,133 @@
+<a class="back-link" routerLink="/clientas"><span>←</span> Volver a clientas</a>
+@if (client(); as c) {
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">LA BELLEZA DE CONOCER CADA DETALLE</p>
+      <h1>Perfil de la clienta</h1>
+      <p>Sus visitas, sus preferencias y sus diseños favoritos.</p>
+    </div>
+    <a class="button primary" routerLink="/disenos/nuevo" [queryParams]="{ client: c.id }"
+      ><app-icon name="plus" /> Nuevo diseño</a
+    >
+  </header>
+  <div class="profile-layout">
+    <aside class="panel profile-card">
+      <div class="profile-arch">
+        <span>{{ c.name.slice(0, 1) }}</span
+        ><i>✧</i>
+      </div>
+      <p class="eyebrow">UN ESTILO PROPIO</p>
+      <h2>{{ c.name }}</h2>
+      <p class="description">
+        {{ c.description || 'Agrega una descripción para recordar sus preferencias de servicio.' }}
+      </p>
+      <div class="profile-stats">
+        <div>
+          <strong>{{ appointments().length }}</strong
+          ><small>CITAS</small>
+        </div>
+        <div>
+          <strong>{{ designs().length }}</strong
+          ><small>DISEÑOS</small>
+        </div>
+      </div>
+      <button class="subtle" (click)="edit()">Editar perfil <span>↗</span></button
+      ><a class="button" routerLink="/citas/nueva" [queryParams]="{ client: c.id }"
+        ><app-icon name="calendar" /> Agendar cita</a
+      >
+    </aside>
+    <div class="profile-content">
+      @if (editing()) {
+        <form class="panel profile-edit" (ngSubmit)="save()">
+          <h2>Detalles de la clienta</h2>
+          <label class="field"
+            >Nombre o código ficticio<input
+              name="name"
+              [(ngModel)]="name"
+              required
+              maxlength="60" /></label
+          ><label class="field"
+            >Descripción<textarea
+              name="description"
+              [(ngModel)]="description"
+              maxlength="500"
+              rows="3"
+            ></textarea>
+          </label>
+          <div>
+            <button type="button" (click)="editing.set(false)">Volver</button
+            ><button type="submit" class="primary" [disabled]="store.busy()">
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      }
+      <section>
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">SU HISTORIA EN TUS MANOS</p>
+            <h2>Diseños anteriores</h2>
+          </div>
+          <span class="design-count">{{ designs().length }} diseños</span>
+        </div>
+        <div class="design-grid">
+          @for (d of designs(); track d.id) {
+            <article class="design-card">
+              <img [src]="d.image" [alt]="d.note || 'Diseño de ' + d.service + ' de ' + c.name" />
+              <div>
+                <span>{{ d.createdAt | date: 'd MMM yyyy' }}</span>
+                <h3>{{ d.service }}</h3>
+                <p>{{ d.note || 'Un diseño para recordar.' }}</p>
+              </div>
+            </article>
+          } @empty {
+            <div class="panel empty">
+              <app-icon name="image" />
+              <h3>Su historia de color empieza aquí</h3>
+              <p>
+                Guarda el primer diseño de {{ c.name }} para tenerlo a mano en su próxima visita.
+              </p>
+              <a class="button" routerLink="/disenos/nuevo" [queryParams]="{ client: c.id }"
+                >Registrar diseño</a
+              >
+            </div>
+          }
+        </div>
+      </section>
+      <section class="visit-section">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">CADA VISITA CUENTA</p>
+            <h2>Historial de citas</h2>
+          </div>
+        </div>
+        <div class="panel visit-list">
+          @for (a of appointments(); track a.id) {
+            <a class="visit-row" [routerLink]="['/citas', a.id, 'editar']"
+              ><div>
+                <strong>{{ a.service }}</strong
+                ><small
+                  >{{ a.date + 'T12:00:00' | date: 'd MMM yyyy' }} · {{ a.time }} ·
+                  {{ a.manicurist || 'Sin asignar' }}</small
+                >
+              </div>
+              <span
+                class="status"
+                [class.confirmed]="a.status === 'Confirmada'"
+                [class.cancelled]="a.status === 'Cancelada'"
+                >{{ a.status }}</span
+              ></a
+            >
+          } @empty {
+            <p class="helper no-visits">Todavía no hay citas registradas para esta clienta.</p>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+} @else if (store.ready()) {
+  <div class="panel empty">
+    <h3>No encontramos esta clienta</h3>
+    <a routerLink="/clientas" class="button">Ver clientas</a>
+  </div>
+}

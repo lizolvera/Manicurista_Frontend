@@ -1,0 +1,157 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">MIRAR TU NEGOCIO CON CLARIDAD</p>
+    <h1>Reportes de las citas</h1>
+    <p>Una mirada a tu agenda y a los encuentros que hacen crecer tu estudio.</p>
+  </div>
+  <div class="filter-tabs period-tabs">
+    <button [class.selected]="preset() === 'week'" (click)="period('week')">Esta semana</button
+    ><button [class.selected]="preset() === 'month'" (click)="period('month')">Este mes</button>
+  </div>
+</header>
+<section class="panel period-filter" aria-label="Periodo del reporte">
+  <label class="field"
+    >Desde<input
+      type="date"
+      [ngModel]="from()"
+      (ngModelChange)="from.set($event); preset.set('custom')" /></label
+  ><span>—</span
+  ><label class="field"
+    >Hasta<input
+      type="date"
+      [ngModel]="to()"
+      (ngModelChange)="to.set($event); preset.set('custom')"
+  /></label>
+  <p>
+    <app-icon name="calendar" /> Reporte por fecha de la cita<br /><small
+      >Datos registrados en tu agenda.</small
+    >
+  </p>
+</section>
+@if (!from() || !to() || from() > to()) {
+  <div class="alert error" role="alert">
+    Selecciona un periodo válido. La fecha inicial debe ser anterior o igual a la final.
+  </div>
+} @else {
+  <div class="report-metrics">
+    <article class="panel metric">
+      <span class="metric-icon"><app-icon name="calendar" /></span>
+      <div>
+        <span>TOTAL DE CITAS</span><strong>{{ report().total | number: '2.0-0' }}</strong
+        ><small>En el periodo seleccionado</small>
+      </div>
+    </article>
+    <article class="panel metric">
+      <span class="metric-icon absence"><app-icon name="user" /></span>
+      <div>
+        <span>INASISTENCIAS</span><strong>{{ report().absent | number: '2.0-0' }}</strong
+        ><small>Marcadas como «No asistió»</small>
+      </div>
+    </article>
+    <article class="panel metric">
+      <span class="metric-icon income">$</span>
+      <div>
+        <span>COBROS REGISTRADOS</span
+        ><strong class="money">{{
+          report().received | currency: 'MXN' : 'symbol' : '1.0-2'
+        }}</strong
+        ><small>Anticipos + pagos adicionales · MXN</small>
+      </div>
+    </article>
+  </div>
+  <div class="report-charts">
+    <section class="panel bar-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">EL RITMO DE TU ESTUDIO</p>
+          <h2>Citas por día de la semana</h2>
+        </div>
+      </div>
+      <p class="chart-explanation">Se agrupan todas las citas del periodo por día de la semana.</p>
+      <div class="bar-legend">
+        <span><i></i> Citas registradas</span><span><i></i> Asistió</span>
+      </div>
+      <div
+        class="bar-chart"
+        role="img"
+        [attr.aria-label]="
+          'Distribución del periodo: ' +
+          report().total +
+          ' citas, ' +
+          report().attended +
+          ' asistencias registradas'
+        "
+      >
+        <div class="chart-grid"><span></span><span></span><span></span><span></span></div>
+        @for (d of report().days; track d.label) {
+          <div class="bar-group">
+            <div class="bars">
+              <div class="bar total-bar" [style.height.%]="(d.total / max()) * 100">
+                <span>{{ d.total }}</span>
+              </div>
+              <div class="bar attended-bar" [style.height.%]="(d.attended / max()) * 100">
+                <span>{{ d.attended }}</span>
+              </div>
+            </div>
+            <span class="day-label">{{ d.label }}</span>
+          </div>
+        }
+      </div>
+      <table class="visually-hidden">
+        <caption>
+          Citas y asistencias por día de la semana
+        </caption>
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Citas</th>
+            <th>Asistió</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of report().days; track d.label) {
+            <tr>
+              <td>{{ d.label }}</td>
+              <td>{{ d.total }}</td>
+              <td>{{ d.attended }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+    <section class="panel donut-panel">
+      <p class="section-kicker">CADA CITA CUENTA</p>
+      <h2>Estado de las citas</h2>
+      <div
+        class="donut"
+        [style.background]="donut()"
+        role="img"
+        [attr.aria-label]="report().total + ' citas en total. El desglose está en la leyenda.'"
+      >
+        <div>
+          <strong>{{ report().total }}</strong
+          ><small>CITAS</small>
+        </div>
+      </div>
+      <ul class="donut-legend">
+        @for (s of segments(); track s.label) {
+          <li>
+            <i [style.background]="s.color"></i><span>{{ s.label }}</span
+            ><strong>{{ s.count }}</strong>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+  @if (!report().total) {
+    <p class="no-data">
+      <app-icon name="sparkle" /> Tu reporte comienza con tu primera cita. No hay datos en este
+      periodo.
+    </p>
+  }
+  <p class="report-note">
+    Los cobros son importes capturados manualmente y se agrupan por fecha de cita; no representan
+    utilidad ni un reporte contable por fecha de pago. Incluyen anticipos de citas canceladas; no se
+    gestionan devoluciones. Una cita pendiente de confirmar no se cuenta como inasistencia.
+  </p>
+}

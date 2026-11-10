@@ -1,0 +1,54 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">COLOR, TEXTURAS Y PEQUEÑOS DETALLES</p>
+    <h1>Galería de diseños</h1>
+    <p>El trabajo que te inspira, organizado para volver a él.</p>
+  </div>
+  <a routerLink="/disenos/nuevo" class="button primary"
+    ><app-icon name="plus" /> Registrar diseño</a
+  >
+</header>
+<div class="gallery-toolbar">
+  <div class="search-field">
+    <app-icon name="search" /><input
+      aria-label="Buscar diseños"
+      placeholder="Buscar por clienta, servicio o nota…"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+    />
+  </div>
+  <span>{{ designs().length }} diseños guardados</span>
+</div>
+<section class="gallery-grid" aria-label="Diseños registrados">
+  @for (d of designs(); track d.id) {
+    <article class="panel gallery-card">
+      <div class="gallery-photo">
+        <img [src]="d.image" [alt]="d.note || 'Diseño de ' + d.service" /><span>{{
+          d.service
+        }}</span>
+      </div>
+      <div class="gallery-caption">
+        <a [routerLink]="['/clientas', d.clientId]">{{ clientName(d.clientId) }} <span>↗</span></a
+        ><time>{{ d.createdAt | date: 'd MMM yyyy' }}</time>
+        <p>{{ d.note || 'Un detalle que merece recordarse.' }}</p>
+      </div>
+    </article>
+  } @empty {
+    <div class="panel empty">
+      <app-icon name="image" />
+      <h3>
+        {{ query() ? 'Sin diseños que coincidan' : 'Tu creatividad merece su propio espacio' }}
+      </h3>
+      <p>
+        {{
+          query()
+            ? 'Prueba con otra clienta o servicio.'
+            : 'Agrega una fotografía y una nota del servicio para empezar tu galería.'
+        }}
+      </p>
+      @if (!query()) {
+        <a routerLink="/disenos/nuevo" class="button">Registrar mi primer diseño</a>
+      }
+    </div>
+  }
+</section>
