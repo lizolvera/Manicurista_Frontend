@@ -29,6 +29,13 @@ export class AgendaPage {
   readonly cancelId = signal('');
   readonly menuId = signal('');
   readonly end = endTime;
+  readonly formatDuration = (hours: number): string => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours % 1) * 60);
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
+  };
   private readonly injector = inject(Injector);
   private readonly resultsHeading = viewChild<ElementRef<HTMLElement>>('resultsHeading');
   readonly statusLabel = computed(

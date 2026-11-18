@@ -24,10 +24,8 @@ export class ReportsPage {
   readonly segments = computed(() => {
     const r = this.report();
     return [
-      { label: 'Asistió', count: r.attended, color: '#9caa8a' },
-      { label: 'No asistió', count: r.absent, color: '#c68e80' },
-      { label: 'Pendiente de confirmar', count: r.pending, color: '#d7bc85' },
-      { label: 'Confirmada sin asistencia registrada', count: r.unrecorded, color: '#c7b7a9' },
+      { label: 'Pendiente', count: r.pending, color: '#d7bc85' },
+      { label: 'Confirmada', count: r.confirmed, color: '#9caa8a' },
       { label: 'Cancelada', count: r.cancelled, color: '#e8d4c9' },
     ];
   });

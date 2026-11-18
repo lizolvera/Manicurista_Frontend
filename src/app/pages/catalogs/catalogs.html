@@ -61,7 +61,7 @@
           <div>
             <strong>{{ s.name }}</strong
             ><small
-              >{{ s.basePrice | currency: 'MXN' }} · {{ s.duration }} min + {{ s.buffer }} min ·
+              >{{ s.basePrice | currency: 'MXN' }} · {{ formatServiceDuration(s.duration) }} + {{ s.buffer }} min ·
               {{ s.active ? 'Activo' : 'Inactivo' }}</small
             >
           </div>
@@ -95,13 +95,26 @@
             step="0.01"
             required /></label
         ><label class="field"
-          >Duración · minutos<input
-            type="number"
+          >Duración · horas
+          <select
             name="duration"
             [(ngModel)]="service.duration"
-            min="15"
-            max="480"
-            required /></label
+            required
+          >
+            <option value="" disabled>Selecciona duración</option>
+            <option [value]="0.5">1/2 hora</option>
+            <option [value]="0.75">1 hora y 15 min</option>
+            <option [value]="1">1 hora</option>
+            <option [value]="1.25">1 hora y 15 min</option>
+            <option [value]="1.5">1 hora y media</option>
+            <option [value]="1.75">1 hora y 45 min</option>
+            <option [value]="2">2 horas</option>
+            <option [value]="2.5">2 horas y media</option>
+            <option [value]="3">3 horas</option>
+            <option [value]="3.5">3 horas y media</option>
+            <option [value]="4">4 horas</option>
+          </select>
+          <small>Duración en horas</small></label>
         ><label class="field"
           >Preparación · minutos<input
             type="number"

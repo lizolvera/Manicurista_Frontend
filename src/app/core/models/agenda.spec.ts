@@ -18,7 +18,7 @@ const appointment = (changes: Partial<Appointment> = {}): Appointment => ({
   date: '2026-11-10',
   time: '09:00',
   service: 'Manicura',
-  duration: 45,
+  duration: 0.75,  // 45 minutos = 0.75 horas
   buffer: 15,
   deposit: 0,
   balancePaid: 0,
@@ -51,7 +51,7 @@ const empty = (): AgendaState => ({
       id: 'servicio-001',
       name: 'Manicura',
       basePrice: 350,
-      duration: 45,
+      duration: 0.75,  // 45 minutos = 0.75 horas
       buffer: 15,
       active: true,
       createdAt: '2026-11-09T18:00:00Z',
@@ -145,7 +145,7 @@ describe('Recorrido persistente de agenda', () => {
           date: '2026-11-10',
           time: '09:00',
           service: 'Manicura',
-          duration: 45,
+          duration: 0.75,  // 45 minutos = 0.75 horas
           buffer: 15,
           deposit: 50,
           notes: 'Nota original',

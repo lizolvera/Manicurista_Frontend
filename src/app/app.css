@@ -1,10 +1,15 @@
 :host {
   display: block;
 }
+
 .app-shell {
   display: flex;
   min-height: 100vh;
 }
+
+/* ============================================
+   SIDEBAR - Minimalista editorial
+   ============================================ */
 .sidebar {
   width: 240px;
   flex-shrink: 0;
@@ -12,103 +17,138 @@
   top: 0;
   height: 100vh;
   padding: 38px 24px 24px;
-  background: linear-gradient(165deg, #fffdfb 20%, #fbf0ed 100%);
+  background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   z-index: 2;
 }
+
 .brand {
   display: flex;
   gap: 14px;
   align-items: center;
   text-decoration: none;
-  color: var(--ink);
-  font:
-    25px Georgia,
-    serif;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  font-style: italic;
   white-space: nowrap;
 }
+
+.brand > div {
+  color: #ffffff;
+}
+
 .brand small {
   display: block;
-  font: 8px var(--font);
-  letter-spacing: 2px;
-  color: var(--muted);
-  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: var(--rose);
+  margin-top: 4px;
 }
+
 .brand-symbol {
   display: block;
   position: relative;
   width: 45px;
-  font:
-    italic 42px Georgia,
-    serif;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 38px;
   color: var(--rose);
-  letter-spacing: -9px;
+  letter-spacing: -8px;
 }
+
 .brand-symbol span {
-  font-size: 34px;
+  font-size: 32px;
 }
+
 .brand-symbol i {
   position: absolute;
   font-size: 18px;
-  right: 0;
-  top: -7px;
-  color: var(--gold);
+  font-style: normal;
+  right: 2px;
+  top: -6px;
+  color: var(--rose-dark);
 }
+
 .navigation-label {
+  font-family: var(--font-body);
   font-size: 8px;
+  font-weight: 500;
   letter-spacing: 2px;
+  text-transform: uppercase;
   color: var(--muted);
   margin: 56px 12px 20px;
 }
+
 nav {
   display: grid;
   gap: 9px;
 }
+
 nav a {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 14px 15px;
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   text-decoration: none;
-  color: #857670;
+  color: var(--muted);
   font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 500;
   border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
+
 nav a:hover {
-  background: #f7eeea;
+  background: var(--rose-subtle);
+  color: var(--ink);
 }
+
 nav a.active {
-  background: linear-gradient(110deg, #f0ddd8, #f7ebe5);
-  color: #82564d;
-  border-color: #ead4cb;
+  background: var(--rose-light);
+  color: var(--rose-dark);
+  border-color: var(--rose);
   font-weight: 600;
 }
+
 nav b {
   margin-left: auto;
-  background: #fff9f5;
-  border-radius: 50%;
+  background: var(--surface);
+  border-radius: var(--radius-full);
   padding: 3px 6px;
   font-size: 10px;
+  font-weight: 600;
+  color: var(--rose);
+  border: 1px solid var(--rose-light);
 }
+
 .studio-note {
   margin-top: auto;
   padding: 35px 13px;
-  color: var(--gold);
+  color: var(--rose);
 }
+
 .studio-note p {
-  font:
-    italic 20px/1.55 Georgia,
-    serif;
-  color: #927b6c;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
   margin: 16px 0 10px;
 }
+
 .studio-note > span {
   font-size: 10px;
   color: var(--muted);
+  font-family: var(--font-body);
 }
+
 .studio-profile {
   border-top: 1px solid var(--border);
   padding-top: 23px;
@@ -116,30 +156,39 @@ nav b {
   align-items: center;
   gap: 12px;
   font-size: 12px;
+  font-family: var(--font-body);
 }
+
 .studio-avatar {
   display: grid;
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(140deg, #ead0c6, #f5e8dd);
-  color: #886954;
-  font:
-    14px Georgia,
-    serif;
+  border-radius: var(--radius-full);
+  background: linear-gradient(140deg, var(--rose-light), var(--rose-subtle));
+  color: var(--rose);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
 }
+
 .studio-profile small {
   display: block;
   margin-top: 5px;
   font-size: 10px;
+  color: var(--muted);
 }
+
+/* ============================================
+   MAIN AREA
+   ============================================ */
 .main-area {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
+
 .topbar {
   height: 85px;
   display: flex;
@@ -147,18 +196,24 @@ nav b {
   gap: 24px;
   padding: 0 46px;
   border-bottom: 1px solid var(--border);
-  background: #fffdfba8;
+  background: var(--surface);
 }
+
 .topbar > span {
+  font-family: var(--font-body);
   font-size: 9px;
+  font-weight: 500;
   letter-spacing: 1.8px;
+  text-transform: uppercase;
   color: var(--muted);
 }
+
 .topbar > span i {
   margin: 0 18px;
   font-style: normal;
-  color: #c8b5a7;
+  color: var(--rose-light);
 }
+
 .connection {
   margin-left: auto;
   font-size: 10px;
@@ -166,13 +221,16 @@ nav b {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: var(--font-body);
 }
+
 .connection-dot {
   width: 5px;
   height: 5px;
-  background: #a28d6c;
-  border-radius: 50%;
+  background: var(--rose);
+  border-radius: var(--radius-full);
 }
+
 .notification-link {
   display: flex;
   position: relative;
@@ -180,15 +238,17 @@ nav b {
   padding: 8px;
   border-left: 1px solid var(--border);
 }
+
 .notification-link i {
   position: absolute;
   top: 7px;
   right: 7px;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: #bc8177;
+  border-radius: var(--radius-full);
+  background: var(--rose-dark);
 }
+
 main {
   width: 100%;
   max-width: 1530px;
@@ -196,9 +256,11 @@ main {
   padding: 42px 46px 32px;
   flex: 1;
 }
+
 .feedback:empty {
   display: none;
 }
+
 footer {
   margin: 0 46px;
   padding: 22px 0;
@@ -207,54 +269,71 @@ footer {
   justify-content: space-between;
   gap: 18px;
   font-size: 8px;
+  font-family: var(--font-body);
   letter-spacing: 1.5px;
-  color: #998879;
+  text-transform: uppercase;
+  color: var(--muted);
 }
+
 footer i {
   padding: 0 12px;
   font-style: normal;
 }
+
 footer small {
   font-size: 9px;
   letter-spacing: 0.4px;
 }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1100px) {
   .sidebar {
     width: 205px;
     padding: 30px 17px;
   }
+  
   .brand {
     font-size: 22px;
     gap: 8px;
   }
+  
   main {
     padding: 32px 28px;
   }
+  
   .topbar {
     padding: 0 28px;
   }
+  
   footer {
     margin: 0 28px;
   }
 }
+
 @media (max-width: 760px) {
   .app-shell {
     display: block;
   }
+  
   .sidebar {
     height: auto;
     position: static;
     width: 100%;
     padding: 20px;
   }
+  
   .brand {
-    font-size: 25px;
+    font-size: 24px;
   }
+  
   .navigation-label,
   .studio-note,
   .studio-profile {
     display: none;
   }
+  
   nav {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -262,6 +341,7 @@ footer small {
     margin-top: 24px;
     padding-bottom: 2px;
   }
+  
   nav a {
     position: relative;
     flex-direction: column;
@@ -270,6 +350,7 @@ footer small {
     font-size: 9px;
     min-width: 0;
   }
+  
   nav b {
     position: absolute;
     top: 0;
@@ -277,39 +358,49 @@ footer small {
     font-size: 8px;
     padding: 1px 4px;
   }
+  
   nav app-icon {
     width: 17px;
     height: 17px;
   }
+  
   .topbar {
     height: 55px;
     padding: 0 20px;
     gap: 12px;
   }
+  
   .topbar > span {
     font-size: 8px;
   }
+  
   .topbar > span i {
     margin: 0 8px;
   }
+  
   .connection {
     font-size: 9px;
   }
+  
   .notification-link {
     display: none;
   }
+  
   main {
     padding: 28px 20px;
   }
+  
   footer {
     margin: 0 20px;
     display: block;
     line-height: 2;
   }
+  
   footer small {
     display: block;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto;

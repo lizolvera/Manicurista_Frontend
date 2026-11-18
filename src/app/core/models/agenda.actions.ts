@@ -254,14 +254,14 @@ export function applyCommand(
         s.name.length > 80 ||
         typeof s.active !== 'boolean' ||
         !isMoney(s.basePrice) ||
-        !Number.isInteger(s.duration) ||
-        s.duration < 15 ||
-        s.duration > 480 ||
+        typeof s.duration !== 'number' ||
+        s.duration <= 0 ||
+        s.duration > 8 ||
         !Number.isInteger(s.buffer) ||
         s.buffer < 0 ||
         s.buffer > 120
       )
-        throw new Error('Revisa el nombre, precio, duración y preparación del servicio.');
+        throw new Error('Revisa el nombre, precio, duración (0.25-8 horas) y preparación del servicio.');
       if (services.some((x) => x.id !== s.id && normalizeName(x.name) === normalizeName(s.name)))
         throw new Error('Ya existe un servicio con ese nombre.');
       const saved = {

@@ -46,7 +46,7 @@ export class AppointmentFormPage {
     service: '',
     date: this.store.selectedDate(),
     time: '09:00',
-    duration: 45,
+    duration: 0.75,  // 45 minutos = 0.75 horas
     buffer: 15,
     totalPrice: undefined,
     deposit: 0,
@@ -100,6 +100,14 @@ export class AppointmentFormPage {
   remaining() {
     return Math.round((Number(this.form.totalPrice || 0) - this.received()) * 100) / 100;
   }
+  
+  formatDuration(hours: number): string {
+    const h = Math.floor(hours);
+    const m = Math.round((hours % 1) * 60);
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
+  }
   async save() {
     if (!this.form.serviceId || !this.form.manicuristId) {
       this.store.error.set('Selecciona un servicio y una manicurista del catálogo.');
@@ -108,11 +116,6 @@ export class AppointmentFormPage {
     const a = { ...this.form, id: this.form.id || crypto.randomUUID() };
     if (await this.store.saveAppointment(a)) {
       this.store.selectedDate.set(a.date);
-      this.store.message.set(
-        this.editId
-          ? 'Cita actualizada conservando su identificador.'
-          : 'Cita guardada como pendiente en la colección citas.',
-      );
       await this.router.navigate(['/agenda']);
     }
   }

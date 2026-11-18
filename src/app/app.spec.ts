@@ -25,7 +25,7 @@ describe('Pantallas de Entre Uñas', () => {
           id: 'servicio-001',
           name: 'Manicura',
           basePrice: 350,
-          duration: 45,
+          duration: 0.75,  // 45 minutos = 0.75 horas
           buffer: 15,
           active: true,
         },
@@ -49,7 +49,7 @@ describe('Pantallas de Entre Uñas', () => {
           id: 'servicio-001',
           name: 'Manicura',
           basePrice: 350,
-          duration: 45,
+          duration: 0.75,  // 45 minutos = 0.75 horas
           buffer: 15,
           active: true,
         },
@@ -117,10 +117,10 @@ describe('Pantallas de Entre Uñas', () => {
     page.selectService('servicio-001');
     page.selectManicurist('manicurista-001');
     expect(page.form.totalPrice).toBe(350);
-    expect(page.form.duration).toBe(45);
+    expect(page.form.duration).toBe(0.75);
     page.form.client = 'C02';
     page.form.totalPrice = 400;
-    page.form.duration = 60;
+    page.form.duration = 1;  // 60 minutos = 1 hora
     await page.save();
     const a = store.state().appointments[0];
     expect(a.serviceId).toBe('servicio-001');
@@ -128,13 +128,13 @@ describe('Pantallas de Entre Uñas', () => {
     await store.command(
       {
         action: 'save-service',
-        payload: { ...store.state().services[0], basePrice: 500, duration: 90 },
+        payload: { ...store.state().services[0], basePrice: 500, duration: 1.5 },  // 90 minutos = 1.5 horas
       },
       'Guardado',
     );
     const edit = await harness.navigateByUrl(`/citas/${a.id}/editar`, AppointmentFormPage);
     expect(edit.form.totalPrice).toBe(400);
-    expect(edit.form.duration).toBe(60);
+    expect(edit.form.duration).toBe(1);  // 60 minutos = 1 hora
   });
   it('el precio total valida pagos y no guarda un importe recibido mayor', async () => {
     const store = TestBed.inject(AgendaService);

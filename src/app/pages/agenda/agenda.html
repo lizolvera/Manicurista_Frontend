@@ -171,7 +171,7 @@
           </div>
           <div>
             <span>TIEMPO RESERVADO</span
-            ><strong>{{ a.duration }} min + {{ a.buffer }} de preparación</strong>
+            ><strong>{{ formatDuration(a.duration) }} + {{ a.buffer }} min de preparación</strong>
           </div>
         </div>
         @if (a.attendance !== 'Sin registrar') {

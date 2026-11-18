@@ -14,7 +14,7 @@ import { Icon } from '../../shared/icon/icon';
 export class CatalogsPage {
   readonly store = inject(AgendaService);
   professional: Manicurist = { id: '', name: '', active: true };
-  service: Service = { id: '', name: '', basePrice: 0, duration: 45, buffer: 15, active: true };
+  service: Service = { id: '', name: '', basePrice: 0, duration: 0.75, buffer: 15, active: true };  // 45 minutos = 0.75 horas
   editProfessional(m: Manicurist) {
     this.professional = { ...m };
   }
@@ -25,7 +25,7 @@ export class CatalogsPage {
     this.professional = { id: '', name: '', active: true };
   }
   resetService() {
-    this.service = { id: '', name: '', basePrice: 0, duration: 45, buffer: 15, active: true };
+    this.service = { id: '', name: '', basePrice: 0, duration: 0.75, buffer: 15, active: true };  // 45 minutos = 0.75 horas
   }
   async saveProfessional() {
     if (
@@ -50,5 +50,13 @@ export class CatalogsPage {
       )
     )
       this.resetService();
+  }
+  
+  formatServiceDuration(hours: number): string {
+    const h = Math.floor(hours);
+    const m = Math.round((hours % 1) * 60);
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
   }
 }
