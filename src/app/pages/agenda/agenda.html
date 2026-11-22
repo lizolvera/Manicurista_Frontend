@@ -5,6 +5,22 @@
     <p>Un día organizado. Más tiempo para hacer lo que amas.</p>
   </div>
   <a class="button primary" routerLink="/citas/nueva"><app-icon name="plus" /> Nueva cita</a>
+  <div class="demo-controls" aria-label="Controles de demostración del experimento">
+    <label class="demo-scenario"
+      >Escenario
+      <select [ngModel]="scenarioToReset()" (ngModelChange)="scenarioToReset.set($event)">
+        @for (s of scenarios; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+    <button type="button" class="subtle" (click)="resetScenario()" [disabled]="store.busy()">
+      Restablecer escenario
+    </button>
+    <button type="button" class="subtle" (click)="exportLog()">
+      <app-icon name="download" /> Exportar bitácora
+    </button>
+  </div>
 </header>
 
 <section class="calendar-overview" aria-label="Calendario y resumen del día">

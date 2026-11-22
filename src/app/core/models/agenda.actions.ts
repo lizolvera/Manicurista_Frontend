@@ -7,11 +7,13 @@ import {
   Notice,
   conflicts,
   validateAppointment,
+  BitacoraEntry,
   Manicurist,
   Service,
   ServiceTime,
   isMoney,
 } from './agenda.model';
+import { isScenario, scenarioState, SCENARIO_DATE, type ScenarioId } from './scenarios';
 
 export type AgendaCommand =
   | { action: 'save'; payload: Appointment }
@@ -21,7 +23,20 @@ export type AgendaCommand =
   | { action: 'save-design'; payload: Design }
   | { action: 'save-manicurist'; payload: Manicurist }
   | { action: 'save-service'; payload: Service }
-  | { action: 'save-time'; payload: ServiceTime };
+  | { action: 'save-time'; payload: ServiceTime }
+  | { action: 'reset-scenario'; payload: { scenario: ScenarioId } };
+
+const LOG_LIMIT = 500;
+
+/** Agrega una entrada a la bitácora (la más reciente queda primero). */
+export function appendLogEntry(
+  old: AgendaState,
+  entry: Omit<BitacoraEntry, 'id' | 'timestamp'>,
+  id: () => string,
+  now: () => string,
+): AgendaState {
+  return { ...old, log: [{ id: id(), timestamp: now(), ...entry }, ...old.log].slice(0, LOG_LIMIT) };
+}
 
 function requireId(id: unknown): asserts id is string {
   if (typeof id !== 'string' || !id.trim() || id.length > 100)
@@ -42,6 +57,10 @@ export function applyCommand(
   let notices = [...old.notices];
   let clients = old.clients.map((c) => ({ ...c }));
   let designs = [...old.designs];
+  let log = [...old.log];
+  const record = (entry: Omit<BitacoraEntry, 'id' | 'timestamp'>) => {
+    log = [{ id: id(), timestamp: now(), ...entry }, ...log].slice(0, LOG_LIMIT);
+  };
   const notice = (a: Appointment, message: string, kind: Notice['kind'] = 'success'): Notice => ({
     id: id(),
     appointmentId: a.id,
@@ -153,6 +172,19 @@ export function applyCommand(
           a.status === 'Cancelada' ? 'cancel' : 'success',
         ),
       );
+      record({
+        scenario: old.scenario,
+        action: !previous
+          ? 'guardar-cita'
+          : previous.time !== a.time || previous.date !== a.date
+            ? 'reprogramar-cita'
+            : a.status === 'Confirmada' && previous.status !== a.status
+              ? 'confirmar-cita'
+              : 'actualizar-cita',
+        appointmentId: a.id,
+        result: 'ok',
+        message: '',
+      });
       break;
     }
     case 'read': {
@@ -337,8 +369,22 @@ export function applyCommand(
       // Bookings keep their own duration/buffer snapshot; editing the catalog never rewrites them.
       break;
     }
+    case 'reset-scenario': {
+      const scenario = command.payload?.scenario;
+      if (!isScenario(scenario))
+        throw new Error('Escenario inválido. Usa T1, T2, T3 o T4.');
+      // Estado determinista del escenario; la bitácora se conserva entre restablecimientos.
+      record({
+        scenario,
+        action: 'restablecer-escenario',
+        appointmentId: '',
+        result: 'ok',
+        message: `Escenario ${scenario} cargado para el día de prueba ${SCENARIO_DATE}`,
+      });
+      return { ...scenarioState(scenario), log, scenario };
+    }
     default:
       throw new Error('Acción inválida.');
   }
-  return { appointments, notices, clients, designs, manicurists, services, times };
+  return { appointments, notices, clients, designs, manicurists, services, times, log, scenario: old.scenario };
 }

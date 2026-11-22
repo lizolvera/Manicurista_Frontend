@@ -196,6 +196,8 @@ describe('Pantallas de Entre Uñas', () => {
       manicurists: [],
       services: [],
       times: [],
+      log: [],
+      scenario: '',
     });
     const harness = await RouterTestingHarness.create();
     const agenda = await harness.navigateByUrl('/agenda', AgendaPage);

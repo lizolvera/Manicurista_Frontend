@@ -6,6 +6,7 @@ import {
   migrateState,
   validateAppointment,
 } from './agenda.model';
+import { SCENARIO_DATE } from './scenarios';
 import { summarizeAppointments } from './report.model';
 
 const appointment = (changes: Partial<Appointment> = {}): Appointment => ({
@@ -67,6 +68,8 @@ const empty = (): AgendaState => ({
       createdAt: '2026-11-09T18:00:00Z',
     },
   ],
+  log: [],
+  scenario: '',
 });
 let sequence = 0;
 const apply = (state: AgendaState, command: AgendaCommand) =>
@@ -184,6 +187,50 @@ describe('Recorrido persistente de agenda', () => {
     expect(state.times.length).toBe(1);
     expect(state.services[0].defaultTimeId).toBe(state.times[0].id);
     expect(state.appointments[0].timeId).toBe(state.times[0].id);
+  });
+  it('restablece escenarios EXP01: T1 vacío, T3/T4 con su cita exacta, idempotente y traslape rechazado', () => {
+    const scenAppt = (changes: Partial<Appointment> = {}): Appointment => ({
+      ...appointment(),
+      manicuristId: 'manicurista-001',
+      serviceId: 'servicio-001',
+      timeId: 'tiempo-045',
+      duration: 0.75,
+      buffer: 15,
+      date: SCENARIO_DATE,
+      totalPrice: 350,
+      ...changes,
+    });
+    let state = apply(empty(), { action: 'reset-scenario', payload: { scenario: 'T1' } });
+    expect(state.scenario).toBe('T1');
+    expect(state.appointments.length).toBe(0);
+    expect(
+      state.log.some((e) => e.action === 'restablecer-escenario' && e.scenario === 'T1'),
+    ).toBe(true);
+
+    const t3 = apply(empty(), { action: 'reset-scenario', payload: { scenario: 'T3' } });
+    expect(t3.appointments.map((a) => [a.id, a.client, a.time, a.duration, a.buffer])).toEqual([
+      ['cita-T3-C01', 'C01', '09:00', 0.75, 15],
+    ]);
+    const t3again = apply(t3, { action: 'reset-scenario', payload: { scenario: 'T3' } });
+    expect(t3again.appointments).toEqual(t3.appointments);
+
+    const t4 = apply(empty(), { action: 'reset-scenario', payload: { scenario: 'T4' } });
+    expect(t4.appointments.map((a) => [a.id, a.time])).toEqual([['cita-T4-C01', '10:00']]);
+    expect(() =>
+      apply(t4, {
+        action: 'save',
+        payload: scenAppt({ id: 'cita-T4-C02', client: 'C02', clientId: 'clienta-C02', time: '10:30' }),
+      }),
+    ).toThrow('horario');
+    expect(
+      conflicts(
+        scenAppt({ id: 'cita-T4-C02b', client: 'C02', clientId: 'clienta-C02', time: '11:00' }),
+        t4.appointments,
+      ),
+    ).toBe(false);
+    expect(() =>
+      apply(empty(), { action: 'reset-scenario', payload: { scenario: 'T9' as never } }),
+    ).toThrow('Escenario inválido');
   });
   it('guarda tiempos en el catálogo y copia su instantánea a la cita', () => {
     let state = apply(empty(), {

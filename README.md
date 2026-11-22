@@ -34,4 +34,8 @@ Con API_URL vacío la demostración funciona en el navegador. Con `http://localh
 
 En Vercel elige esta carpeta como Root Directory, `npm run build` como construcción y `dist/frontend/browser` como salida. Se incluye `vercel.json`.
 
+## Experimento EXP01
+
+La pantalla Agenda (`src/app/pages/agenda/`) muestra controles de demostración en su encabezado: un selector T1–T4 con "Restablecer escenario" (envía `reset-scenario` al backend y recarga la agenda en la fecha del escenario) y "Exportar bitácora" (descarga `bitacora.csv` con `timestamp,escenario,accion,cita,resultado`). En modo local estos controles operan sobre el estado del navegador. Consulta el README de la raíz para el detalle del comando.
+
 La guía completa y las limitaciones están en el README de la raíz y `docs/ESTRUCTURA_PANTALLAS.md`.

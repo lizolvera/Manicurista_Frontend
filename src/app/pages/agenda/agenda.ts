@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AgendaService } from '../../core/services/agenda.service';
 import { Appointment, endTime, localDate, Status } from '../../core/models/agenda.model';
+import { SCENARIOS, SCENARIO_DATE, type ScenarioId } from '../../core/models/scenarios';
 import { Icon } from '../../shared/icon/icon';
 
 @Component({
@@ -29,6 +30,9 @@ export class AgendaPage {
   readonly cancelId = signal('');
   readonly menuId = signal('');
   readonly end = endTime;
+  // Controles solo para la facilitadora del experimento (demo EXP01).
+  readonly scenarios = SCENARIOS;
+  readonly scenarioToReset = signal<ScenarioId>('T1');
   readonly formatDuration = (hours: number): string => {
     const h = Math.floor(hours);
     const m = Math.round((hours % 1) * 60);
@@ -135,6 +139,40 @@ export class AgendaPage {
   }
   async attendance(a: Appointment, value: Appointment['attendance']) {
     if (await this.store.saveAppointment({ ...a, attendance: value })) this.menuId.set('');
+  }
+  async resetScenario() {
+    const scenario = this.scenarioToReset();
+    if (
+      await this.store.command(
+        { action: 'reset-scenario', payload: { scenario } },
+        `Escenario ${scenario} restablecido.`,
+      )
+    ) {
+      this.store.selectedDate.set(SCENARIO_DATE);
+      await this.store.load();
+    }
+  }
+  exportLog() {
+    const rows = this.store.state().log.map((e) => [
+      e.timestamp,
+      e.scenario,
+      e.action,
+      e.appointmentId,
+      e.result === 'error' && e.message ? `error: ${e.message}` : e.result,
+    ]);
+    const csv =
+      '﻿' +
+      [['timestamp', 'escenario', 'accion', 'cita', 'resultado'], ...rows]
+        .map((row) =>
+          row.map((cell) => '"' + String(cell).replace(/"/g, '""').replace(/^[=+@-]/, "'") + '"').join(','),
+        )
+        .join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'bitacora.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   }
   exportList() {
     const rows = this.appointments().map((a) => [

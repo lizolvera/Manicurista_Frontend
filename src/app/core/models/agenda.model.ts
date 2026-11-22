@@ -71,6 +71,15 @@ export interface Notice {
   read: boolean;
   kind?: 'success' | 'cancel' | 'reminder';
 }
+export interface BitacoraEntry {
+  id: string;
+  timestamp: string;  // ISO 8601 UTC, tal como se capturó
+  scenario: string;   // escenario activo ('T1'…'T4') o '' si no hay ninguno
+  action: string;     // restablecer-escenario | guardar-cita | confirmar-cita | reprogramar-cita | actualizar-cita | intento-rechazado
+  appointmentId: string;
+  result: 'ok' | 'error';
+  message: string;
+}
 export interface AgendaState {
   appointments: Appointment[];
   notices: Notice[];
@@ -79,6 +88,8 @@ export interface AgendaState {
   manicurists: Manicurist[];
   services: Service[];
   times: ServiceTime[];
+  log: BitacoraEntry[];
+  scenario: string;
 }
 
 export const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
@@ -182,6 +193,8 @@ export function emptyState(): AgendaState {
     manicurists: [],
     services: [],
     times: [],
+    log: [],
+    scenario: '',
   };
 }
 
@@ -240,6 +253,7 @@ export function migrateState(raw: Partial<AgendaState>): AgendaState {
       attendance: a.attendance ?? 'Sin registrar',
     };
   });
+  const log: BitacoraEntry[] = Array.isArray(raw.log) ? raw.log : [];
   return {
     appointments,
     manicurists,
@@ -248,5 +262,8 @@ export function migrateState(raw: Partial<AgendaState>): AgendaState {
     notices: raw.notices,
     clients,
     designs: Array.isArray(raw.designs) ? raw.designs : [],
+    log,
+    // El escenario activo se deriva de la última entrada de restablecimiento.
+    scenario: log.find((e) => e.action === 'restablecer-escenario')?.scenario ?? '',
   };
 }

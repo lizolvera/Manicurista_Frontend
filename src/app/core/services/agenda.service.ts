@@ -6,7 +6,7 @@ import {
   migrateState,
   emptyState,
 } from '../models/agenda.model';
-import { AgendaCommand, applyCommand } from '../models/agenda.actions';
+import { AgendaCommand, applyCommand, appendLogEntry } from '../models/agenda.actions';
 import { API_URL } from '../config/connection';
 
 export const API_ENDPOINT = new InjectionToken<string>('API_ENDPOINT', {
@@ -83,6 +83,30 @@ export class AgendaService {
       this.message.set(success);
       return true;
     } catch (e) {
+      // En modo local el rechazo también se asienta en la bitácora.
+      if (command.action === 'save') {
+        const next = appendLogEntry(
+          this.state(),
+          {
+            scenario: this.state().scenario,
+            action: 'intento-rechazado',
+            appointmentId:
+              typeof (command.payload as Appointment).id === 'string'
+                ? (command.payload as Appointment).id
+                : '',
+            result: 'error',
+            message: (e as Error).message,
+          },
+          () => crypto.randomUUID(),
+          () => new Date().toISOString(),
+        );
+        try {
+          localStorage.setItem(this.key, JSON.stringify(next));
+        } catch {
+          // Si el almacenamiento falla, la vista conserve la bitácora en memoria.
+        }
+        this.state.set(next);
+      }
       this.error.set((e as Error).message);
       return false;
     } finally {
