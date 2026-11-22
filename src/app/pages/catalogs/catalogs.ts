@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
 import { AgendaService } from '../../core/services/agenda.service';
-import { Manicurist, Service } from '../../core/models/agenda.model';
+import { Manicurist, Service, ServiceTime, formatHours } from '../../core/models/agenda.model';
 import { Icon } from '../../shared/icon/icon';
 
 @Component({
@@ -13,19 +13,31 @@ import { Icon } from '../../shared/icon/icon';
 })
 export class CatalogsPage {
   readonly store = inject(AgendaService);
+  readonly durationOptions = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 5, 6, 8];
   professional: Manicurist = { id: '', name: '', active: true };
-  service: Service = { id: '', name: '', basePrice: 0, duration: 0.75, buffer: 15, active: true };  // 45 minutos = 0.75 horas
+  service: Service = { id: '', name: '', basePrice: 0, active: true };
+  time: ServiceTime = { id: '', label: '', duration: 1, buffer: 15, active: true };
   editProfessional(m: Manicurist) {
     this.professional = { ...m };
   }
   editService(s: Service) {
     this.service = { ...s };
   }
+  editTime(t: ServiceTime) {
+    this.time = { ...t };
+  }
   resetProfessional() {
     this.professional = { id: '', name: '', active: true };
   }
   resetService() {
-    this.service = { id: '', name: '', basePrice: 0, duration: 0.75, buffer: 15, active: true };  // 45 minutos = 0.75 horas
+    this.service = { id: '', name: '', basePrice: 0, active: true };
+  }
+  resetTime() {
+    this.time = { id: '', label: '', duration: 1, buffer: 15, active: true };
+  }
+  timeLabel(id?: string): string {
+    const t = this.store.state().times.find((t) => t.id === id);
+    return t ? `${t.label} + ${t.buffer} min` : 'Sin tiempo sugerido';
   }
   async saveProfessional() {
     if (
@@ -51,12 +63,17 @@ export class CatalogsPage {
     )
       this.resetService();
   }
-  
-  formatServiceDuration(hours: number): string {
-    const h = Math.floor(hours);
-    const m = Math.round((hours % 1) * 60);
-    if (h > 0 && m > 0) return `${h}h ${m}m`;
-    if (h > 0) return `${h}h`;
-    return `${m}m`;
+  async saveTime() {
+    const label = this.time.label.trim() || formatHours(this.time.duration);
+    if (
+      await this.store.command(
+        {
+          action: 'save-time',
+          payload: { ...this.time, label, id: this.time.id || crypto.randomUUID() },
+        },
+        'Tiempo guardado. Las citas anteriores conservan su duración acordada.',
+      )
+    )
+      this.resetTime();
   }
 }

@@ -61,7 +61,7 @@
           <div>
             <strong>{{ s.name }}</strong
             ><small
-              >{{ s.basePrice | currency: 'MXN' }} · {{ formatServiceDuration(s.duration) }} + {{ s.buffer }} min ·
+              >{{ s.basePrice | currency: 'MXN' }} · {{ timeLabel(s.defaultTimeId) }} ·
               {{ s.active ? 'Activo' : 'Inactivo' }}</small
             >
           </div>
@@ -94,36 +94,21 @@
             max="100000"
             step="0.01"
             required /></label
-        ><label class="field"
-          >Duración · horas
-          <select
-            name="duration"
-            [(ngModel)]="service.duration"
-            required
-          >
-            <option value="" disabled>Selecciona duración</option>
-            <option [value]="0.5">1/2 hora</option>
-            <option [value]="0.75">1 hora y 15 min</option>
-            <option [value]="1">1 hora</option>
-            <option [value]="1.25">1 hora y 15 min</option>
-            <option [value]="1.5">1 hora y media</option>
-            <option [value]="1.75">1 hora y 45 min</option>
-            <option [value]="2">2 horas</option>
-            <option [value]="2.5">2 horas y media</option>
-            <option [value]="3">3 horas</option>
-            <option [value]="3.5">3 horas y media</option>
-            <option [value]="4">4 horas</option>
+        ><label class="field full-width"
+          >Tiempo sugerido al agendar
+          <select name="defaultTimeId" [(ngModel)]="service.defaultTimeId">
+            <option [ngValue]="undefined">Sin tiempo sugerido</option>
+            @for (t of store.state().times; track t.id) {
+              <option [value]="t.id">
+                {{ t.label }} · +{{ t.buffer }} min{{ t.active ? '' : ' (inactivo)' }}
+              </option>
+            }
           </select>
-          <small>Duración en horas</small></label>
-        ><label class="field"
-          >Preparación · minutos<input
-            type="number"
-            name="buffer"
-            [(ngModel)]="service.buffer"
-            min="0"
-            max="120"
-            required
-        /></label>
+          <small
+            >Al crear una cita con este servicio se precarga esta duración del catálogo de
+            tiempos.</small
+          ></label
+        >
       </div>
       <label class="checkbox-field"
         ><input type="checkbox" name="serviceActive" [(ngModel)]="service.active" /> Disponible para
@@ -139,8 +124,73 @@
       </div>
     </form>
   </section>
+  <section class="panel catalog-panel">
+    <div class="panel-heading">
+      <h2>Tiempos</h2>
+      <span>{{ store.state().times.length }} registrados</span>
+    </div>
+    <div class="catalog-list">
+      @for (t of store.state().times; track t.id) {
+        <div class="catalog-row">
+          <div>
+            <strong>{{ t.label }}</strong
+            ><small
+              >{{ t.duration }} h · +{{ t.buffer }} min de preparación ·
+              {{ t.active ? 'Activo' : 'Inactivo' }}</small
+            >
+          </div>
+          <button (click)="editTime(t)" [attr.aria-label]="'Editar tiempo ' + t.label">
+            Editar
+          </button>
+        </div>
+      } @empty {
+        <p class="helper">Registra las duraciones que ofreces, por ejemplo "1 hora y media".</p>
+      }
+    </div>
+    <form (ngSubmit)="saveTime()">
+      <h3>{{ time.id ? 'Editar tiempo' : 'Nuevo tiempo' }}</h3>
+      <div class="form-grid">
+        <label class="field full-width"
+          >Etiqueta<input
+            name="timeLabel"
+            [(ngModel)]="time.label"
+            maxlength="40"
+            placeholder="Ej. 1 hora y media (se autocompleta si la dejas vacía)" /></label
+        ><label class="field"
+          >Duración · horas
+          <select name="timeDuration" [(ngModel)]="time.duration" required>
+            @for (d of durationOptions; track d) {
+              <option [value]="d">{{ d }} h</option>
+            }
+          </select>
+          <small>La duración se especifica en horas (0.5 = 30 min).</small></label
+        ><label class="field"
+          >Preparación · minutos<input
+            type="number"
+            name="timeBuffer"
+            [(ngModel)]="time.buffer"
+            min="0"
+            max="120"
+            required
+        /></label>
+      </div>
+      <label class="checkbox-field"
+        ><input type="checkbox" name="timeActive" [(ngModel)]="time.active" /> Disponible para
+        nuevas citas</label
+      >
+      <div class="catalog-actions">
+        @if (time.id) {
+          <button type="button" (click)="resetTime()">Cancelar edición</button>
+        }
+        <button class="primary" type="submit" [disabled]="store.busy() || !store.ready()">
+          Guardar tiempo
+        </button>
+      </div>
+    </form>
+  </section>
 </div>
 <p class="helper">
   Desactivar conserva el historial y evita nuevas asignaciones. No elimina citas ni diseños
-  anteriores.
+  anteriores. Las citas guardan una copia de la duración acordada, así que editar un tiempo no
+  modifica citas ya agendadas.
 </p>

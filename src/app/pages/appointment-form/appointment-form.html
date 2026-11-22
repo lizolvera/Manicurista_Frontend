@@ -14,9 +14,9 @@
     <a routerLink="/agenda" class="button">Ver agenda</a>
   </div>
 } @else {
-  @if (store.ready() && (!services().length || !manicurists().length)) {
+  @if (store.ready() && (!services().length || !manicurists().length || !times().length)) {
     <div class="alert error">
-      Necesitas un servicio y una manicurista activos para agendar.
+      Necesitas un servicio, una manicurista y al menos un tiempo activos para agendar.
       <a routerLink="/catalogos">Configurar catálogos</a>
     </div>
   }
@@ -83,24 +83,19 @@
           ><label class="field"
             >Duración del servicio
             <select
-              name="duration"
-              [(ngModel)]="form.duration"
+              name="timeId"
+              [ngModel]="form.timeId"
+              (ngModelChange)="selectTime($event)"
               required
             >
               <option value="" disabled>Selecciona duración</option>
-              <option [value]="0.5">1/2 hora (30 min)</option>
-              <option [value]="0.75">1 hora y 15 min</option>
-              <option [value]="1">1 hora</option>
-              <option [value]="1.25">1 hora y 15 min</option>
-              <option [value]="1.5">1 hora y media</option>
-              <option [value]="1.75">1 hora y 45 min</option>
-              <option [value]="2">2 horas</option>
-              <option [value]="2.5">2 horas y media</option>
-              <option [value]="3">3 horas</option>
-              <option [value]="3.5">3 horas y media</option>
-              <option [value]="4">4 horas</option>
-            </select>
-            <small>La duración ahora se especifica en horas</small></label
+              @for (t of durationOptions(); track t.duration) {
+                <option [value]="t.id">
+                  {{ t.label }}{{ t.active ? '' : ' (inactivo)' }}
+                </option>
+              }</select
+            ><small
+              >Se elige del catálogo de tiempos{{ form.serviceId && !form.timeId ? '; al elegir un servicio se precarga su tiempo sugerido' : '' }}.</small></label
           ><label class="field"
             >Preparación posterior · minutos<input
               type="number"
@@ -109,7 +104,9 @@
               min="0"
               max="120"
               required
-            /><small>Reserva tiempo para preparar el siguiente servicio.</small></label
+            /><small
+              >Variable por cita: se precarga con el tiempo elegido y puedes ajustarla. Reserva
+              tiempo para preparar el siguiente servicio.</small></label
           >
         </div>
       </section>

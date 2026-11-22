@@ -9,6 +9,7 @@ import {
   validateAppointment,
   Manicurist,
   Service,
+  ServiceTime,
   isMoney,
 } from './agenda.model';
 
@@ -19,7 +20,8 @@ export type AgendaCommand =
   | { action: 'save-client'; payload: Client }
   | { action: 'save-design'; payload: Design }
   | { action: 'save-manicurist'; payload: Manicurist }
-  | { action: 'save-service'; payload: Service };
+  | { action: 'save-service'; payload: Service }
+  | { action: 'save-time'; payload: ServiceTime };
 
 function requireId(id: unknown): asserts id is string {
   if (typeof id !== 'string' || !id.trim() || id.length > 100)
@@ -35,6 +37,7 @@ export function applyCommand(
 ): AgendaState {
   let manicurists = [...old.manicurists];
   let services = [...old.services];
+  let times = [...old.times];
   let appointments = [...old.appointments];
   let notices = [...old.notices];
   let clients = old.clients.map((c) => ({ ...c }));
@@ -58,6 +61,7 @@ export function applyCommand(
         manicurist: payload.manicurist,
         manicuristId: payload.manicuristId,
         serviceId: payload.serviceId,
+        timeId: payload.timeId,
         totalPrice: payload.totalPrice,
         date: payload.date,
         time: payload.time,
@@ -81,6 +85,22 @@ export function applyCommand(
         throw new Error('Selecciona una manicurista activa del catálogo.');
       if (!service || (!service.active && previous?.serviceId !== service.id))
         throw new Error('Selecciona un servicio activo del catálogo.');
+      if (a.timeId) {
+        requireId(a.timeId);
+        const time = times.find((t) => t.id === a.timeId);
+        const previousTime = previous?.timeId
+          ? times.find((t) => t.id === previous.timeId)
+          : undefined;
+        if (!time || (!time.active && !previousTime))
+          throw new Error('Selecciona una duración activa del catálogo de tiempos.');
+        // The booking keeps an immutable snapshot of the agreed duration, like the service name:
+        // only a new booking or a newly chosen time copies the duration from the catalog.
+        if (!previous || previous.timeId !== a.timeId) a.duration = time.duration;
+        // The preparation (buffer) is variable per booking: it comes from the form,
+        // prefilled with the catalog time's buffer.
+        if (typeof a.buffer !== 'number' || !Number.isInteger(a.buffer) || a.buffer < 0)
+          a.buffer = time.buffer;
+      }
       a.manicurist = professional.name;
       a.service = service.name;
       const validation = validateAppointment(a);
@@ -253,36 +273,72 @@ export function applyCommand(
         !s.name.trim() ||
         s.name.length > 80 ||
         typeof s.active !== 'boolean' ||
-        !isMoney(s.basePrice) ||
-        typeof s.duration !== 'number' ||
-        s.duration <= 0 ||
-        s.duration > 8 ||
-        !Number.isInteger(s.buffer) ||
-        s.buffer < 0 ||
-        s.buffer > 120
+        !isMoney(s.basePrice)
       )
-        throw new Error('Revisa el nombre, precio, duración (0.25-8 horas) y preparación del servicio.');
+        throw new Error('Revisa el nombre, precio y estado del servicio.');
+      if (s.defaultTimeId) {
+        requireId(s.defaultTimeId);
+        const previousService = services.find((x) => x.id === s.id);
+        const time = times.find((t) => t.id === s.defaultTimeId);
+        const previousTime = previousService?.defaultTimeId
+          ? times.find((t) => t.id === previousService.defaultTimeId)
+          : undefined;
+        if (!time || (!time.active && !previousTime))
+          throw new Error('Selecciona un tiempo activo del catálogo.');
+      }
       if (services.some((x) => x.id !== s.id && normalizeName(x.name) === normalizeName(s.name)))
         throw new Error('Ya existe un servicio con ese nombre.');
-      const saved = {
+      const saved: Service = {
         id: s.id,
         name: s.name.trim(),
         basePrice: s.basePrice,
-        duration: s.duration,
-        buffer: s.buffer,
+        ...(s.defaultTimeId ? { defaultTimeId: s.defaultTimeId } : {}),
         active: s.active,
         createdAt: services.find((x) => x.id === s.id)?.createdAt || now(),
       };
       services = [...services.filter((x) => x.id !== s.id), saved];
-      // A catalog edit changes display names, never the price and duration already agreed in a booking.
+      // A catalog edit changes display names, never the price and time already agreed in a booking.
       appointments = appointments.map((a) =>
         a.serviceId === s.id ? { ...a, service: saved.name } : a,
       );
       designs = designs.map((d) => (d.serviceId === s.id ? { ...d, service: saved.name } : d));
       break;
     }
+    case 'save-time': {
+      const t = command.payload;
+      requireId(t?.id);
+      if (
+        typeof t.label !== 'string' ||
+        !t.label.trim() ||
+        t.label.length > 40 ||
+        typeof t.duration !== 'number' ||
+        t.duration <= 0 ||
+        t.duration > 8 ||
+        !Number.isInteger(t.buffer) ||
+        t.buffer < 0 ||
+        t.buffer > 120 ||
+        typeof t.active !== 'boolean'
+      )
+        throw new Error(
+          'Revisa la etiqueta, duración (0.25–8 horas) y preparación (0–120 min) del tiempo.',
+        );
+      const key = (d: number, b: number) => `${Math.round(d * 60)}:${b}`;
+      if (times.some((x) => x.id !== t.id && key(x.duration, x.buffer) === key(t.duration, t.buffer)))
+        throw new Error('Ya existe un tiempo con esa duración y preparación.');
+      const saved: ServiceTime = {
+        id: t.id,
+        label: t.label.trim(),
+        duration: t.duration,
+        buffer: t.buffer,
+        active: t.active,
+        createdAt: times.find((x) => x.id === t.id)?.createdAt || now(),
+      };
+      times = [...times.filter((x) => x.id !== t.id), saved];
+      // Bookings keep their own duration/buffer snapshot; editing the catalog never rewrites them.
+      break;
+    }
     default:
       throw new Error('Acción inválida.');
   }
-  return { appointments, notices, clients, designs, manicurists, services };
+  return { appointments, notices, clients, designs, manicurists, services, times };
 }

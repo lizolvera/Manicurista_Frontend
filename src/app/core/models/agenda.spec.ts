@@ -14,6 +14,7 @@ const appointment = (changes: Partial<Appointment> = {}): Appointment => ({
   manicurist: 'Manicurista 1',
   manicuristId: 'manicurista-001',
   serviceId: 'servicio-001',
+  timeId: 'tiempo-001',
   totalPrice: 2000,
   date: '2026-11-10',
   time: '09:00',
@@ -51,6 +52,15 @@ const empty = (): AgendaState => ({
       id: 'servicio-001',
       name: 'Manicura',
       basePrice: 350,
+      defaultTimeId: 'tiempo-001',
+      active: true,
+      createdAt: '2026-11-09T18:00:00Z',
+    },
+  ],
+  times: [
+    {
+      id: 'tiempo-001',
+      label: '45 min',
       duration: 0.75,  // 45 minutos = 0.75 horas
       buffer: 15,
       active: true,
@@ -153,6 +163,16 @@ describe('Recorrido persistente de agenda', () => {
         },
       ],
       notices: [],
+      services: [
+        {
+          id: 'servicio-001',
+          name: 'Manicura',
+          basePrice: 350,
+          duration: 0.75,
+          buffer: 15,
+          active: true,
+        },
+      ],
     };
     const state = migrateState(old as unknown as Partial<AgendaState>);
     expect(state.appointments[0].notes).toBe('Nota original');
@@ -160,6 +180,32 @@ describe('Recorrido persistente de agenda', () => {
     expect(state.appointments[0].deposit).toBe(50);
     expect(state.clients[0].name).toBe('C01');
     expect(migrateState(state).clients.length).toBe(1);
+    // Legacy services carried their own duration; migration lifts it into the time catalog.
+    expect(state.times.length).toBe(1);
+    expect(state.services[0].defaultTimeId).toBe(state.times[0].id);
+    expect(state.appointments[0].timeId).toBe(state.times[0].id);
+  });
+  it('guarda tiempos en el catálogo y copia su instantánea a la cita', () => {
+    let state = apply(empty(), {
+      action: 'save-time',
+      payload: { id: 'tiempo-002', label: '2 horas', duration: 2, buffer: 10, active: true },
+    });
+    expect(state.times.length).toBe(2);
+    state = save(state, appointment({ timeId: 'tiempo-002' }));
+    expect(state.appointments[0].timeId).toBe('tiempo-002');
+    expect(state.appointments[0].duration).toBe(2); // duración tomada del catálogo
+    expect(state.appointments[0].buffer).toBe(15); // preparación variable: se toma del formulario
+    state = save(state, appointment({ id: 'a2', timeId: 'tiempo-002', buffer: 30, time: '12:00' }));
+    expect(state.appointments[1].buffer).toBe(30);
+    expect(() =>
+      apply(state, {
+        action: 'save-time',
+        payload: { id: 'tiempo-003', label: 'Otra', duration: 2, buffer: 10, active: true },
+      }),
+    ).toThrow('Ya existe un tiempo');
+    expect(() => save(empty(), appointment({ id: 'a9', timeId: 'missing' }))).toThrow(
+      'catálogo de tiempos',
+    );
   });
 });
 
@@ -222,11 +268,10 @@ describe('Clientas, diseños y reportes', () => {
     ];
     const report = summarizeAppointments(all, '2026-11-01', '2026-11-30');
     expect(report.total).toBe(4);
-    expect(report.absent).toBe(1);
     expect(report.pending).toBe(1);
-    expect(
-      report.attended + report.absent + report.pending + report.cancelled + report.unrecorded,
-    ).toBe(4);
+    expect(report.confirmed).toBe(2);
+    expect(report.cancelled).toBe(1);
+    expect(report.pending + report.confirmed + report.cancelled).toBe(report.total);
     expect(report.received).toBe(220);
     expect(report.days.reduce((n, d) => n + d.total, 0)).toBe(4);
   });

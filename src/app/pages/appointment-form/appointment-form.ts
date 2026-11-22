@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Appointment, endTime } from '../../core/models/agenda.model';
+import { Appointment, ServiceTime, endTime } from '../../core/models/agenda.model';
 import { AgendaService } from '../../core/services/agenda.service';
 import { Icon } from '../../shared/icon/icon';
 
@@ -35,6 +35,22 @@ export class AppointmentFormPage {
           m.id === this.store.state().appointments.find((a) => a.id === this.editId)?.manicuristId,
       ),
   );
+  readonly times = computed(() =>
+    this.store
+      .state()
+      .times.filter(
+        (t) =>
+          t.active ||
+          t.id === this.store.state().appointments.find((a) => a.id === this.editId)?.timeId,
+      ),
+  );
+  // The duration select shows one option per distinct duration; its buffer only
+  // prefills the separate, editable preparation field.
+  readonly durationOptions = computed(() => {
+    const byDuration = new Map<number, ServiceTime>();
+    for (const t of this.times()) if (!byDuration.has(t.duration)) byDuration.set(t.duration, t);
+    return [...byDuration.values()].sort((a, b) => a.duration - b.duration);
+  });
   readonly end = endTime;
   private initialized = false;
   form: Appointment = {
@@ -44,9 +60,10 @@ export class AppointmentFormPage {
     manicuristId: '',
     serviceId: '',
     service: '',
+    timeId: '',
     date: this.store.selectedDate(),
     time: '09:00',
-    duration: 0.75,  // 45 minutos = 0.75 horas
+    duration: 0.75,  // 45 minutos = 0.75 horas (instantánea de la cita)
     buffer: 15,
     totalPrice: undefined,
     deposit: 0,
@@ -84,8 +101,16 @@ export class AppointmentFormPage {
     if (s) {
       this.form.service = s.name;
       this.form.totalPrice = s.basePrice;
-      this.form.duration = s.duration;
-      this.form.buffer = s.buffer;
+      if (s.defaultTimeId) this.selectTime(s.defaultTimeId);
+      else this.form.timeId = '';
+    }
+  }
+  selectTime(id: string) {
+    const t = this.store.state().times.find((t) => t.id === id);
+    if (t) {
+      this.form.timeId = t.id;
+      this.form.duration = t.duration;
+      this.form.buffer = t.buffer;
     }
   }
   selectManicurist(id: string) {
@@ -111,6 +136,10 @@ export class AppointmentFormPage {
   async save() {
     if (!this.form.serviceId || !this.form.manicuristId) {
       this.store.error.set('Selecciona un servicio y una manicurista del catálogo.');
+      return;
+    }
+    if (!this.form.timeId) {
+      this.store.error.set('Selecciona una duración del catálogo de tiempos.');
       return;
     }
     const a = { ...this.form, id: this.form.id || crypto.randomUUID() };

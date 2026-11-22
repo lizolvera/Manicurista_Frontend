@@ -8,6 +8,7 @@ export interface Appointment {
   manicurist: string;
   manicuristId: string;
   serviceId: string;
+  timeId?: string;
   totalPrice?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -33,8 +34,15 @@ export interface Service {
   id: string;
   name: string;
   basePrice: number;
-  duration: number;
-  buffer: number;
+  defaultTimeId?: string;  // Tiempo del catálogo que se sugiere al agendar este servicio
+  active: boolean;
+  createdAt?: string;
+}
+export interface ServiceTime {
+  id: string;
+  label: string;     // ej. "1 hora y media"
+  duration: number;  // Duración en HORAS (ej: 1.5 = 1 hora y 30 minutos)
+  buffer: number;    // Tiempo de preparación en MINUTOS
   active: boolean;
   createdAt?: string;
 }
@@ -70,16 +78,25 @@ export interface AgendaState {
   designs: Design[];
   manicurists: Manicurist[];
   services: Service[];
+  times: ServiceTime[];
 }
 
 export const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
 export const normalizeName = (name: string) => name.trim().toLocaleLowerCase('es-MX');
+export function formatHours(hours: number): string {
+  const total = Math.round(hours * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h > 0 && m > 0) return `${h} hora${h > 1 ? 's' : ''} y ${m} min`;
+  if (h > 0) return `${h} hora${h > 1 ? 's' : ''}`;
+  return `${m} min`;
+}
 export function localDate(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 export function endTime(a: Appointment): string {
-  const end = minutes(a.time) + a.duration + a.buffer;
-  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+  const totalMinutes = minutes(a.time) + a.duration * 60 + a.buffer;
+  return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
 }
 export function conflicts(candidate: Appointment, all: Appointment[]): boolean {
   return all.some(
@@ -93,8 +110,8 @@ export function conflicts(candidate: Appointment, all: Appointment[]): boolean {
         (a.manicuristId && candidate.manicuristId
           ? a.manicuristId === candidate.manicuristId
           : normalizeName(a.manicurist) === normalizeName(candidate.manicurist))) &&
-      minutes(candidate.time) < minutes(a.time) + a.duration + a.buffer &&
-      minutes(a.time) < minutes(candidate.time) + candidate.duration + candidate.buffer,
+      minutes(candidate.time) < minutes(a.time) + a.duration * 60 + a.buffer &&
+      minutes(a.time) < minutes(candidate.time) + candidate.duration * 60 + candidate.buffer,
   );
 }
 export function validateAppointment(a: Appointment): string {
@@ -112,15 +129,15 @@ export function validateAppointment(a: Appointment): string {
   if (typeof a.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(a.time))
     return 'Selecciona una hora válida.';
   if (
-    !Number.isInteger(a.duration) ||
-    a.duration < 15 ||
-    a.duration > 480 ||
+    typeof a.duration !== 'number' ||
+    a.duration <= 0 ||
+    a.duration > 8 ||
     !Number.isInteger(a.buffer) ||
     a.buffer < 0 ||
     a.buffer > 120
   )
-    return 'Revisa la duración (15–480 min) y preparación (0–120 min).';
-  if (minutes(a.time) < 420 || minutes(a.time) + a.duration + a.buffer > 1260)
+    return 'Revisa la duración (0.25–8 horas) y preparación (0–120 min).';
+  if (minutes(a.time) < 420 || minutes(a.time) + a.duration * 60 + a.buffer > 1260)
     return 'La cita y su preparación deben quedar entre las 07:00 y las 21:00.';
   if (!isMoney(a.totalPrice))
     return 'Indica un precio total válido en MXN, con hasta dos decimales.';
@@ -157,7 +174,15 @@ export function isMoney(value: unknown): value is number {
 }
 
 export function emptyState(): AgendaState {
-  return { appointments: [], clients: [], notices: [], designs: [], manicurists: [], services: [] };
+  return {
+    appointments: [],
+    clients: [],
+    notices: [],
+    designs: [],
+    manicurists: [],
+    services: [],
+    times: [],
+  };
 }
 
 /** Reads older local demos without discarding records or inventing service prices. */
@@ -165,8 +190,31 @@ export function migrateState(raw: Partial<AgendaState>): AgendaState {
   if (!Array.isArray(raw.appointments) || !Array.isArray(raw.notices))
     throw new Error('No se pudieron leer los datos guardados.');
   const manicurists = raw.manicurists ?? [];
-  const services = raw.services ?? [];
+  const services = (raw.services ?? []).map((s) => ({ ...s }));
   const clients: Client[] = Array.isArray(raw.clients) ? raw.clients : [];
+  // Older demos stored duration/buffer inside each service; lift them into the time catalog.
+  let times: ServiceTime[] = Array.isArray(raw.times) ? raw.times : [];
+  if (!Array.isArray(raw.times)) {
+    for (const s of services) {
+      const legacy = s as unknown as { duration?: unknown; buffer?: unknown };
+      if (typeof legacy.duration === 'number' && typeof legacy.buffer === 'number') {
+        let time = times.find(
+          (t) => t.duration === legacy.duration && t.buffer === legacy.buffer,
+        );
+        if (!time) {
+          time = {
+            id: `legacy-time-${times.length + 1}`,
+            label: formatHours(legacy.duration),
+            duration: legacy.duration,
+            buffer: legacy.buffer,
+            active: true,
+          };
+          times.push(time);
+        }
+        s.defaultTimeId = time.id;
+      }
+    }
+  }
   const appointments = raw.appointments.map((a) => {
     let client = clients.find(
       (c) => c.id === a.clientId || normalizeName(c.name) === normalizeName(a.client),
@@ -187,6 +235,7 @@ export function migrateState(raw: Partial<AgendaState>): AgendaState {
         a.serviceId ??
         services.find((s) => normalizeName(s.name) === normalizeName(a.service))?.id ??
         '',
+      timeId: a.timeId ?? times.find((t) => t.duration === a.duration && t.buffer === a.buffer)?.id,
       balancePaid: a.balancePaid ?? 0,
       attendance: a.attendance ?? 'Sin registrar',
     };
@@ -195,6 +244,7 @@ export function migrateState(raw: Partial<AgendaState>): AgendaState {
     appointments,
     manicurists,
     services,
+    times,
     notices: raw.notices,
     clients,
     designs: Array.isArray(raw.designs) ? raw.designs : [],
